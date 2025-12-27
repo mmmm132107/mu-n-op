@@ -5,11 +5,10 @@
 <title>sagittarius</title>
 
 <style>
-
 body{
   margin:0;
   height:100vh;
-  background:radial-gradient( circle at 40% 20%, #1a2b4a, #07101f 70% );
+  background:radial-gradient(circle at 40% 20%, #14233d, #050912 70%);
   color:#e8ecf6;
   font-family:serif;
   display:flex;
@@ -18,23 +17,36 @@ body{
   flex-direction:column;
 }
 
-/* intro text */
+/* intro */
 #intro{
   font-size:20px;
-  opacity:.9;
-  letter-spacing:.5px;
+  opacity:.95;
   transition:.7s;
 }
 .hide{ opacity:0; pointer-events:none; }
 
-/* board wrapper */
-.board-wrap{
+/* layout có trục a‑h / 1‑8 */
+.board-frame{
   display:none;
   flex-direction:column;
   align-items:center;
+  gap:6px;
 }
 
-/* board itself */
+.board-wrap{
+  display:grid;
+  grid-template-columns:28px auto;
+  grid-template-rows:auto 28px;
+  gap:4px;
+}
+
+.axis{
+  display:grid;
+  place-items:center;
+  color:#b9c7ec;
+  font-size:14px;
+}
+
 .board{
   display:grid;
   grid-template-columns:repeat(8,72px);
@@ -42,42 +54,39 @@ body{
   border-radius:14px;
   overflow:hidden;
   border:2px solid rgba(160,200,255,.35);
-  box-shadow:0 0 36px rgba(90,140,220,.35);
+  box-shadow:0 0 34px rgba(100,150,230,.35);
 }
 
-/* gradient squares */
+/* ô sáng / tối — gradient nhưng tương phản */
 .light{
-  background:linear-gradient(145deg,#f4f7ff,#cfd8ff);
+  background:linear-gradient(145deg,#f6f8ff,#d8e0ff);
 }
 .dark{
-  background:linear-gradient(145deg,#6f82b7,#40527f);
+  background:linear-gradient(145deg,#6e82b8,#3f4f7f);
 }
 
 .cell{
   display:flex;
   justify-content:center;
   align-items:center;
-  font-size:36px;
+  font-size:38px;
   cursor:pointer;
   user-select:none;
 }
-
 .cell:hover{
   outline:2px solid rgba(220,240,255,.6);
 }
 
-/* message banners */
+/* message */
 #status{
-  margin-top:16px;
+  margin-top:10px;
   font-style:italic;
   opacity:0;
   transition:.7s;
 }
 #status.show{ opacity:1; }
-
 .success{ color:#9fffae; }
-.fail{ color:#ff9090; }
-
+.fail{ color:#ff8f8f; }
 </style>
 </head>
 
@@ -85,71 +94,72 @@ body{
 
 <div id="intro">play the plot — play the horse</div>
 
-<div class="board-wrap" id="wrap">
-  <div class="board" id="board"></div>
+<div class="board-frame" id="frame">
+  <div class="board-wrap">
+    <div id="yAxis" class="axis"></div>
+    <div class="board" id="board"></div>
+    <div></div>
+    <div id="xAxis" class="axis"></div>
+  </div>
   <div id="status"></div>
 </div>
 
 <script>
-
 /*
-   TOẠ ĐỘ
+  TRẠNG THÁI BAN ĐẦU (giống ảnh)
 
-   row 0 → rank 8
-   row 7 → rank 1
-   col 0 → a
-   col 7 → h
+  ♚ b8 = (0,1)
+  ♔ b6 = (2,1)
+  ♗ e6 = (2,4)
+  ♞ c5 = (3,2)
 
-   TRẠNG THÁI BAN ĐẦU
+  Người chơi bắt buộc:
+    ♞ c5 → a6 (3,2 → 2,0)
 
-   ♚ b8 = (0,1)
-   ♔ b6 = (2,1)
-   ♗ e6 = (2,4)
-   ♞ c5 = (3,2)
-
-   YÊU CẦU
-
-   Người chơi đi đúng:
-     c5 → a6  (3,2 → 2,0)
-
-   Sau đó máy tự đi:
-     ♚ b8 → a8
-     ♗ e6 → d5
-
-   Sai nước → thất bại → quay về veil.html
+  Sau đó máy tự động:
+    ♚ b8 → a8
+    ♗ e6 → d5
 */
 
-const board = document.getElementById("board");
 const intro = document.getElementById("intro");
-const wrap = document.getElementById("wrap");
+const frame = document.getElementById("frame");
+const board = document.getElementById("board");
 const statusBox = document.getElementById("status");
 
-/* positions */
+/* quân */
 let knight = { r:3, c:2 };
 let kingBlack = { r:0, c:1 };
 let kingWhite = { r:2, c:1 };
 let bishop    = { r:2, c:4 };
 
-const STEP1 = { r:2, c:0 }; // a6 (nước hợp lệ duy nhất)
-
+const STEP1 = { r:2, c:0 }; // a6
 let progressed = false;
 
-/* show board after intro fades */
+/* trục toạ độ */
+(function axes(){
+  const y = document.getElementById("yAxis");
+  const x = document.getElementById("xAxis");
+  for(let i=8;i>=1;i--){
+    let d=document.createElement("div"); d.textContent=i; y.appendChild(d);
+  }
+  for(let c of "abcdefgh"){
+    let d=document.createElement("div"); d.textContent=c; x.appendChild(d);
+  }
+})();
+
+/* intro → hiện bàn */
 setTimeout(()=>{
   intro.classList.add("hide");
   setTimeout(()=>{
-    wrap.style.display="flex";
+    frame.style.display="flex";
     draw();
   },600);
 },1100);
 
-/* render board */
 function draw(){
   board.innerHTML="";
-
   for(let r=0;r<8;r++){
     for(let c=0;c<8;c++){
-
       const cell=document.createElement("div");
       cell.className="cell "+((r+c)%2===0?"light":"dark");
 
@@ -164,58 +174,52 @@ function draw(){
   }
 }
 
-/* knight move rule */
 function isKnightMove(r,c){
   const dr=Math.abs(r-knight.r);
   const dc=Math.abs(c-knight.c);
-  return (dr===2 && dc===1) || (dr===1 && dc===2);
+  return (dr===2&&dc===1)||(dr===1&&dc===2);
 }
 
-/* reset + failure */
 function fail(){
   statusBox.textContent="mission failed.";
   statusBox.className="fail show";
-  setTimeout(()=> window.location.href="veil.html", 1200);
+  setTimeout(()=>window.location.href="veil.html",1200);
 }
 
-/* success sequence */
 function succeed(){
   statusBox.textContent="The king is captured.";
   statusBox.className="success show";
-
-  setTimeout(()=> window.location.href="memory.html", 1200);
+  setTimeout(()=>window.location.href="memory.html",1200);
 }
 
-/* handle move */
 function attempt(r,c){
-
   if(!isKnightMove(r,c)) return fail();
 
-  // chỉ chấp nhận nước c5 → a6
+  // chỉ chấp nhận c5 → a6
   if(!progressed){
-
     if(r===STEP1.r && c===STEP1.c){
-
       knight={r,c};
       progressed=true;
       draw();
 
-      // máy tự diễn biến
+      // máy diễn biến
       setTimeout(()=>{
-        kingBlack={ r:0, c:0 }; // b8 → a8
+        kingBlack={r:0,c:0}; // b8→a8
         draw();
-
         setTimeout(()=>{
-          bishop={ r:3, c:3 }; // e6 → d5
+          bishop={r:3,c:3};  // e6→d5
           draw();
           succeed();
         },600);
-
       },600);
-
-    } else return fail();
+    }
+    else return fail();
   }
 }
+</script>
+
+</body>
+</html>
 
 </script>
 
