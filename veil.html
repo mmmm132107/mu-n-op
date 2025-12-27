@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8">
 <title>veil</title>
 
 <style>
-
 body{
   margin:0;
   height:100vh;
   overflow:hidden;
-  background:#06070a;
+  background:#05060b;
   color:#e6e6e6;
   font-family:serif;
   display:flex;
@@ -18,92 +17,109 @@ body{
   align-items:center;
 }
 
-/* 🌌 gradient nền trôi chậm */
+/* 🌌 nền trời sâu */
 .bg{
   position:absolute;
-  width:180%;
-  height:180%;
+  inset:-40%;
   background:
-    radial-gradient(circle at 20% 30%, #1b2135, transparent 40%),
-    radial-gradient(circle at 70% 70%, #0c1224, transparent 45%),
-    radial-gradient(circle at 55% 20%, #2c3f73, transparent 40%);
-  filter:blur(70px);
-  opacity:.65;
-  animation: drift 40s linear infinite;
+    radial-gradient(circle at 30% 30%, #1a2240, transparent 45%),
+    radial-gradient(circle at 70% 60%, #0b1328, transparent 50%);
+  filter:blur(80px);
+  animation: drift 45s linear infinite;
+  opacity:.7;
 }
-
 @keyframes drift{
-  0%{ transform:translate(-6%,-4%) scale(1); }
-  50%{ transform:translate(6%,4%) scale(1.06); }
-  100%{ transform:translate(-6%,-4%) scale(1); }
+  0%{transform:translate(-5%,-5%)}
+  50%{transform:translate(5%,5%)}
+  100%{transform:translate(-5%,-5%)}
 }
 
-/* ⭐ sao 4 cánh — khung xương hình thoi cong */
+/* ================= CONSTELLATIONS ================= */
+
+.constellation{
+  position:absolute;
+  transition:1s;
+}
+
 .star{
   position:absolute;
-  opacity:.55;
-  animation: floatStar 18s ease-in-out infinite;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#cfe6ff;
+  box-shadow:0 0 8px rgba(200,230,255,.9);
 }
 
-.star svg{
-  width:100%;
-  height:100%;
+/* sao trung tâm */
+.star.core{
+  width:14px;
+  height:14px;
+  box-shadow:0 0 16px rgba(220,240,255,1);
 }
 
-.star.small{ width:16px; height:24px; }
-.star.big{
-  width:48px;
-  height:76px;
-  opacity:.95;
-  filter:drop-shadow(0 0 14px rgba(200,230,255,.9));
-  cursor:pointer;
-}
-
-@keyframes floatStar{
-  0%{ transform:translate(0,0); }
-  50%{ transform:translate(10px,-20px); }
-  100%{ transform:translate(0,0); }
-}
-
-/* 🌠 đường nối chòm sao */
+/* đường nối */
 .line{
   position:absolute;
-  width:1px;
-  background:linear-gradient(to bottom,#9fb8ff,transparent);
-  opacity:.45;
+  height:1px;
+  background:linear-gradient(to right,#bcd6ff,transparent);
+  opacity:.6;
 }
+
+/* chòm sao được kích hoạt */
+.active .star{
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse{
+  0%,100%{opacity:.6}
+  50%{opacity:1}
+}
+
+/* 🌊 ripple */
+.ripple{
+  position:absolute;
+  border:1px solid rgba(180,220,255,.6);
+  border-radius:50%;
+  width:10px;
+  height:10px;
+  animation:ripple 0.6s ease-out forwards;
+}
+
+@keyframes ripple{
+  from{transform:scale(1);opacity:.8}
+  to{transform:scale(10);opacity:0}
+}
+
+/* ================= UI ================= */
 
 .wrap{
   position:relative;
-  z-index:3;
+  z-index:5;
   text-align:center;
 }
 
-h3{ font-weight:300; opacity:.9; }
-
 input{
-  margin-top:10px;
-  background:#0e1119;
-  border:1px solid #2b3140;
+  background:#0e1426;
+  border:1px solid #2b3558;
   padding:10px 14px;
   border-radius:6px;
-  color:#e5e5e5;
+  color:#fff;
 }
 
 button{
   margin-left:6px;
   padding:10px 14px;
-  background:#2b5cff;
-  border:none;
   border-radius:6px;
+  border:none;
+  background:#2b5cff;
   color:white;
   cursor:pointer;
 }
 
 #wrong{
-  color:#ff6b6b;
   display:none;
-  margin-top:8px;
+  color:#ff6b6b;
+  margin-top:6px;
 }
 
 </style>
@@ -113,106 +129,76 @@ button{
 
 <div class="bg"></div>
 
-<!-- ===========================
-     🌌 CONSTELLATIONS
-     =========================== -->
+<!-- ♐ SAGITTARIUS -->
+<div class="constellation" id="sag" style="top:32%;left:22%;">
+  <div class="star core" style="top:40px;left:80px;"></div>
+  <div class="star" style="top:20px;left:120px;"></div>
+  <div class="star" style="top:60px;left:140px;"></div>
+  <div class="star" style="top:100px;left:110px;"></div>
+  <div class="star" style="top:120px;left:60px;"></div>
 
-<!-- ♐ SAGITTARIUS — NHÂN MÃ -->
-<div class="star small" style="top:28%; left:22%;">STAR</div>
-<div class="star small" style="top:34%; left:28%;">STAR</div>
-<div class="star small" style="top:30%; left:34%;">STAR</div>
-<div class="star small" style="top:38%; left:40%;">STAR</div>
-<div class="star small" style="top:44%; left:34%;">STAR</div>
-<div class="star small" style="top:48%; left:26%;">STAR</div>
+  <div class="line" style="top:45px;left:90px;width:40px;"></div>
+  <div class="line" style="top:70px;left:110px;width:35px;"></div>
+  <div class="line" style="top:105px;left:90px;width:30px;"></div>
+</div>
 
-<!-- ♍ VIRGO — XỬ NỮ -->
-<div class="star small" style="top:20%; left:70%;">STAR</div>
-<div class="star small" style="top:28%; left:76%;">STAR</div>
-<div class="star small" style="top:36%; left:72%;">STAR</div>
-<div class="star small" style="top:44%; left:78%;">STAR</div>
-<div class="star small" style="top:52%; left:74%;">STAR</div>
+<!-- ♍ VIRGO -->
+<div class="constellation" id="vir" style="top:30%;left:60%;">
+  <div class="star core" style="top:60px;left:80px;"></div>
+  <div class="star" style="top:20px;left:60px;"></div>
+  <div class="star" style="top:40px;left:120px;"></div>
+  <div class="star" style="top:100px;left:140px;"></div>
+  <div class="star" style="top:140px;left:100px;"></div>
 
-<!-- ✨ POLARIS / BẮC ĐẨU -->
-<div class="star small" style="top:12%; left:50%;">STAR</div>
-<div class="star small" style="top:16%; left:56%;">STAR</div>
-<div class="star small" style="top:22%; left:60%;">STAR</div>
-<div class="star small" style="top:28%; left:64%;">STAR</div>
+  <div class="line" style="top:50px;left:70px;width:50px;"></div>
+  <div class="line" style="top:80px;left:90px;width:60px;"></div>
+  <div class="line" style="top:120px;left:100px;width:45px;"></div>
+</div>
 
-<!-- ⭐ sao lớn = cổng trang -->
-<a class="star big" style="top:42%; left:52%;" data-key="saggitarius">STAR</a>
-<a class="star big" style="top:70%; left:64%;" data-key="virgo">STAR</a>
-<a class="star big" style="top:18%; left:50%;" data-key="polaris">STAR</a>
-
-
+<!-- UI -->
 <div class="wrap">
-  <h3>not every constellation leads somewhere.</h3>
-  <p>enter the key</p>
-
-  <input id="gateInput" type="password" placeholder="password">
-  <button onclick="unlockGate('gateInput')">open</button>
-
-  <p id="wrong">not this one.</p>
+  <h3>not every constellation answers.</h3>
+  <input id="pw" type="password" placeholder="enter key">
+  <button onclick="unlock()">open</button>
+  <div id="wrong">not this one.</div>
 </div>
 
 <script>
 
-/* ⭐ SVG sao 4 cánh */
-document.querySelectorAll(".star").forEach(s=>{
-  s.innerHTML = `
-  <svg viewBox="0 0 100 160">
-    <path
-      d="M50 0
-        C60 30 65 35 98 50
-        C65 65 60 70 50 160
-        C40 70 35 65 2 50
-        C35 35 40 30 50 0"
-      fill="none"
-      stroke="rgba(200,230,255,.85)"
-      stroke-width="3.2"/>
-  </svg>`;
-});
-
-
-/* 🔐 password → trang tương ứng */
+/* ===== PASSWORD MAP ===== */
 const GATES = {
-
-  /* yêu cầu: nhập đúng */
-  saggitarius : "saggitarius.html",
-
-  /* các tầng khác */
-  virgo   : "virgo.html",
-  polaris : "polaris.html"
+  saggitarius: { el:"sag", url:"saggitarius.html" },
+  virgo:       { el:"vir", url:"virgo.html" }
 };
 
+function unlock(){
+  const key = pw.value.trim();
+  const gate = GATES[key];
 
-/* mở bằng password */
-function unlockGate(inputId){
-
-  const key = document.getElementById(inputId).value.trim();
-
-  if(GATES[key]){
-    wrong.style.display = "none";
-    window.location.href = GATES[key];
+  if(!gate){
+    wrong.style.display="block";
+    return;
   }
-  else{
-    wrong.style.display = "block";
-  }
+
+  wrong.style.display="none";
+  const constellation = document.getElementById(gate.el);
+  constellation.classList.add("active");
+
+  // ripple tại sao trung tâm
+  const core = constellation.querySelector(".star.core");
+  const r = document.createElement("div");
+  r.className="ripple";
+  r.style.left = core.offsetLeft + "px";
+  r.style.top  = core.offsetTop + "px";
+  constellation.appendChild(r);
+
+  // đợi 1s rồi chuyển trang
+  setTimeout(()=>{
+    window.location.href = gate.url;
+  },1000);
 }
-
-
-/* click sao lớn để mở */
-document.querySelectorAll(".star.big").forEach(star=>{
-  star.addEventListener("click", ()=>{
-    const key = star.dataset.key;
-    if(GATES[key]){
-      window.location.href = GATES[key];
-    }
-  });
-});
 
 </script>
 
 </body>
 </html>
-
-
