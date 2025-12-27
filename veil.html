@@ -17,7 +17,7 @@ body{
   align-items:center;
 }
 
-/* 🌌 nền trời */
+/* ===== BACKGROUND ===== */
 .bg{
   position:absolute;
   inset:-40%;
@@ -34,8 +34,7 @@ body{
   100%{transform:translate(-6%,-6%)}
 }
 
-/* ================= CONSTELLATION ================= */
-
+/* ===== CONSTELLATIONS ===== */
 .constellation{
   position:absolute;
 }
@@ -46,24 +45,43 @@ body{
   height:8px;
   border-radius:50%;
   background:#d9ecff;
-  box-shadow:0 0 10px rgba(210,235,255,.9);
+  box-shadow:0 0 8px rgba(210,235,255,.8);
 }
 
-/* sao nổi bật */
 .star.bright{
   width:13px;
   height:13px;
-  box-shadow:0 0 22px rgba(235,248,255,1);
+  box-shadow:0 0 18px rgba(235,248,255,1);
 }
 
-/* ripple cho mọi sao */
-.star.active::after{
-  content:"";
+/* line */
+.line{
   position:absolute;
-  inset:0;
-  border-radius:50%;
+  height:1px;
+  background:linear-gradient(to right,#bcd6ff,transparent);
+  opacity:.6;
+}
+
+/* ===== ONE-TIME FLASH ===== */
+.flash{
+  animation: flash 1.2s ease-out forwards;
+}
+
+@keyframes flash{
+  0%{opacity:.4; box-shadow:0 0 6px rgba(200,230,255,.5)}
+  50%{opacity:1; box-shadow:0 0 22px rgba(230,245,255,1)}
+  100%{opacity:.8; box-shadow:0 0 10px rgba(210,235,255,.8)}
+}
+
+/* ripple */
+.ripple{
+  position:absolute;
   border:1px solid rgba(180,220,255,.6);
-  animation:ripple 1.2s ease-out infinite;
+  border-radius:50%;
+  width:8px;
+  height:8px;
+  animation:ripple 1s ease-out forwards;
+  pointer-events:none;
 }
 
 @keyframes ripple{
@@ -71,8 +89,7 @@ body{
   to{transform:scale(7);opacity:0}
 }
 
-/* ================= UI ================= */
-
+/* ===== UI ===== */
 .wrap{
   position:relative;
   z-index:5;
@@ -111,32 +128,33 @@ button{
 
 <!-- ♐ SAGITTARIUS -->
 <div class="constellation" id="sag" style="top:30%;left:18%;">
-  <div class="star bright" style="top:60px; left:90px;"></div>
-  <div class="star" style="top:30px; left:130px;"></div>
-  <div class="star" style="top:80px; left:150px;"></div>
-  <div class="star" style="top:120px; left:120px;"></div>
-  <div class="star" style="top:140px; left:70px;"></div>
-  <div class="star" style="top:110px; left:30px;"></div>
-  <div class="star" style="top:70px; left:20px;"></div>
+  <div class="star bright" style="top:60px;left:90px;"></div>
+  <div class="star" style="top:30px;left:130px;"></div>
+  <div class="star" style="top:80px;left:150px;"></div>
+  <div class="star" style="top:120px;left:120px;"></div>
+  <div class="star" style="top:140px;left:70px;"></div>
+  <div class="star" style="top:110px;left:30px;"></div>
+
+  <div class="line" style="top:65px;left:95px;width:45px;"></div>
+  <div class="line" style="top:85px;left:125px;width:30px;"></div>
+  <div class="line" style="top:125px;left:85px;width:50px;"></div>
 </div>
 
 <!-- ♍ VIRGO -->
 <div class="constellation" id="vir" style="top:26%;left:52%;">
-  <div class="star" style="top:20px; left:40px;"></div>
-  <div class="star" style="top:40px; left:70px;"></div>
-  <div class="star" style="top:10px; left:110px;"></div>
-  <div class="star" style="top:-10px; left:150px;"></div>
+  <div class="star" style="top:20px;left:40px;"></div>
+  <div class="star" style="top:40px;left:70px;"></div>
+  <div class="star" style="top:10px;left:110px;"></div>
+  <div class="star" style="top:-10px;left:150px;"></div>
 
-  <div class="star bright" style="top:60px; left:100px;"></div>
+  <div class="star bright" style="top:60px;left:100px;"></div>
 
-  <div class="star" style="top:80px; left:140px;"></div>
-  <div class="star" style="top:60px; left:180px;"></div>
-  <div class="star" style="top:40px; left:220px;"></div>
+  <div class="star" style="top:80px;left:140px;"></div>
+  <div class="star" style="top:60px;left:180px;"></div>
+  <div class="star" style="top:40px;left:220px;"></div>
 
-  <div class="star bright" style="top:110px; left:120px;"></div>
-  <div class="star" style="top:150px; left:100px;"></div>
-  <div class="star" style="top:190px; left:80px;"></div>
-  <div class="star" style="top:220px; left:60px;"></div>
+  <div class="line" style="top:55px;left:70px;width:80px;"></div>
+  <div class="line" style="top:75px;left:100px;width:90px;"></div>
 </div>
 
 <!-- ⭐ NORTH STAR -->
@@ -154,33 +172,38 @@ button{
 
 <script>
 const GATES = {
-  saggitarius: "sag.html",
-  virgo: "virgo.html",
-  north: "north.html"
+  saggitarius: { id:"sag", url:"sag.html" },
+  virgo:       { id:"vir", url:"virgo.html" },
+  north:       { id:"north", url:"north.html" }
 };
 
 function unlock(){
   const key = pw.value.trim();
-  const target = GATES[key];
+  const gate = GATES[key];
 
-  if(!target){
+  if(!gate){
     wrong.style.display="block";
     return;
   }
 
   wrong.style.display="none";
+  const group = document.getElementById(gate.id);
+  const stars = group.querySelectorAll(".star");
 
-  const map = {
-    saggitarius: "sag",
-    virgo: "vir",
-    north: "north"
-  };
+  stars.forEach(star=>{
+    star.classList.add("flash");
 
-  const stars = document.querySelectorAll(`#${map[key]} .star`);
-  stars.forEach(s => s.classList.add("active"));
+    const r = document.createElement("div");
+    r.className="ripple";
+    r.style.left = star.offsetLeft + "px";
+    r.style.top  = star.offsetTop + "px";
+    group.appendChild(r);
+
+    setTimeout(()=>r.remove(),1000);
+  });
 
   setTimeout(()=>{
-    window.location.href = target;
+    window.location.href = gate.url;
   },1000);
 }
 </script>
