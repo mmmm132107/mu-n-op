@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>This place was not made to be searched for.</h2>
+  <a href="star.html">enter</a>
+</body>
+</html>

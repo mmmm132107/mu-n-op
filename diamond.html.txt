@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>Enter password</h2>
+
+  <input id="pw" type="password">
+  <button onclick="check()">Open</button>
+
+  <p id="wrong" style="color:red;display:none">
+    wrong key
+  </p>
+
+  <div id="diamond" style="display:none">
+    <h3>🌙 Welcome to the secret page</h3>
+    <p>(sau này bạn thay nội dung này)</p>
+  </div>
+
+<script>
+  const REAL_PASSWORD = "midnight";
+
+  function check(){
+    const v = document.getElementById("pw").value;
+    if(v === REAL_PASSWORD){
+      document.getElementById("secret").style.display="block";
+      document.getElementById("wrong").style.display="none";
+    } else {
+      document.getElementById("wrong").style.display="block";
+    }
+  }
+</script>
+
+</body>
+</html>
