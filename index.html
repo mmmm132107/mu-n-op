@@ -1,7 +1,143 @@
 <!DOCTYPE html>
 <html>
+<head>
+<meta charset="utf-8" />
+<title>...</title>
+
+<style>
+
+body{
+  margin:0;
+  height:100vh;
+  overflow:hidden;
+  background:#050507;
+  color:#e6e6e6;
+  font-family:serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* 🌌 slow moving gradient background */
+.bg{
+  position:absolute;
+  width:140%;
+  height:140%;
+  background:radial-gradient(circle at 20% 30%, #1b263b, transparent 40%),
+             radial-gradient(circle at 80% 70%, #0d1b2a, transparent 40%),
+             radial-gradient(circle at 60% 20%, #415a77, transparent 35%);
+  filter:blur(60px);
+  animation: drift 28s linear infinite;
+  opacity:.65;
+}
+
+@keyframes drift{
+  0%{ transform:translate(-6%,-4%) scale(1); }
+  50%{ transform:translate(4%,6%) scale(1.05); }
+  100%{ transform:translate(-6%,-4%) scale(1); }
+}
+
+/* content container */
+.wrap{
+  position:relative;
+  z-index:3;
+  text-align:center;
+}
+
+/* typewriter text */
+.type{
+  font-size:20px;
+  letter-spacing:.5px;
+  opacity:.9;
+  display:inline-block;
+  border-right:1px solid #aaa;
+  padding-right:6px;
+  white-space:nowrap;
+  overflow:hidden;
+}
+
+a.enter{
+  display:inline-block;
+  margin-top:28px;
+  color:#9cd3ff;
+  text-decoration:none;
+  border-bottom:1px dashed #9cd3ff;
+  padding-bottom:3px;
+  opacity:.85;
+}
+a.enter:hover{ opacity:1; }
+
+/* 🌘 hidden deeper layer link */
+.deep{
+  margin-top:26px;
+  font-size:13px;
+  color:#777;
+  opacity:0;
+  transition:1s;
+}
+
+.deep.show{
+  opacity:.65;
+}
+
+.deep a{
+  color:#b3cfff;
+  text-decoration:none;
+}
+
+.deep a:hover{
+  opacity:1;
+}
+
+</style>
+</head>
+
+
 <body>
-  <h2>This place was not made to be searched for.</h2>
-  <a href="diamond.html">enter</a>
+
+<div class="bg"></div>
+
+<div class="wrap">
+
+  <div class="type" id="ty"></div>
+
+  <br>
+
+  <a class="enter" href="diamond.html">enter</a>
+
+  <!-- hidden layer (xuất hiện sau 5s) -->
+  <div class="deep" id="deep">
+    <p>there is always something deeper.</p>
+    <a href="veil.html">look closer</a>
+  </div>
+
+</div>
+
+
+<script>
+
+/* ✍ typewriter text */
+const text = "This place was not made to be searched for.";
+const el = document.getElementById("ty");
+
+let i = 0;
+
+function type(){
+  if(i < text.length){
+    el.innerHTML += text.charAt(i);
+    i++;
+    setTimeout(type, 55);
+  }
+}
+
+type();
+
+/* 🌘 reveal deeper layer after delay */
+setTimeout(()=>{
+  document.getElementById("deep").classList.add("show");
+}, 5200);
+
+</script>
+
 </body>
 </html>
