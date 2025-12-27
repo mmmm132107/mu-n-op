@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>deeper</title>
+
+<style>
+
+body{
+  background:#08090c;
+  color:#e6e6e6;
+  font-family:serif;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  margin:0;
+}
+
+/* subtle glow bg */
+.bg{
+  position:absolute;
+  width:130%;
+  height:130%;
+  filter:blur(60px);
+  background:radial-gradient(circle at 40% 30%, #1b1f2e, transparent 45%),
+             radial-gradient(circle at 70% 70%, #0f1726, transparent 45%);
+  opacity:.6;
+}
+
+.wrap{
+  position:relative;
+  z-index:2;
+  text-align:center;
+}
+
+h3{
+  font-weight:300;
+  opacity:.9;
+}
+
+input{
+  margin-top:8px;
+  background:#11141b;
+  border:1px solid #2b3140;
+  padding:10px 14px;
+  border-radius:6px;
+  color:#e5e5e5;
+  outline:none;
+}
+
+button{
+  margin-left:6px;
+  padding:10px 14px;
+  background:#2b5cff;
+  border:none;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+#wrong{
+  color:#ff6b6b;
+  display:none;
+  margin-top:8px;
+}
+
+/* hidden content */
+#deep{
+  margin-top:36px;
+  opacity:0;
+  transition:.6s;
+}
+
+.show{
+  opacity:1;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="bg"></div>
+
+<div class="wrap">
+
+  <h3>this place was meant to stay unseen.</h3>
+
+  <p>enter the second key</p>
+
+  <input id="pw2" type="password" placeholder="password">
+  <button onclick="unlock()">open</button>
+
+  <p id="wrong">not this one.</p>
+
+  <div id="deep">
+    <h2>🌘 deeper</h2>
+    <p>the further you walk, the quieter it becomes.</p>
+  </div>
+
+</div>
+
+
+<script>
+
+const KEY2 = "silent";   // 👉 mật khẩu tầng 2 (đổi tuỳ bạn)
+
+function unlock(){
+
+  const v = pw2.value;
+
+  if(v === KEY2){
+    wrong.style.display="none";
+    deep.classList.add("show");
+  }
+  else{
+    wrong.style.display="block";
+    deep.classList.remove("show");
+  }
+}
+
+</script>
+
+</body>
+</html>
