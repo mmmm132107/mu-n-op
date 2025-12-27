@@ -15,17 +15,28 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
+  flex-direction:column;
+}
+
+h3{
+  margin-bottom:10px;
+  font-weight:300;
+  opacity:.9;
+}
+
+.sub{
+  opacity:.7;
+  margin-bottom:14px;
+  font-style:italic;
 }
 
 .board{
   display:grid;
-  grid-template-columns:repeat(5,70px);
-  grid-template-rows:repeat(5,70px);
-  gap:4px;
-  padding:14px;
-  border:1px solid #333a4d;
-  border-radius:14px;
-  background:#0b0f18;
+  grid-template-columns:repeat(8,70px);
+  grid-template-rows:repeat(8,70px);
+  border:1px solid #2b3248;
+  border-radius:12px;
+  overflow:hidden;
   box-shadow:0 0 40px rgba(90,120,190,.25);
 }
 
@@ -33,39 +44,34 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  border-radius:10px;
-  background:#101626;
+  font-size:34px;
   cursor:pointer;
-  transition:.25s;
 }
+
+.light{ background:#f5f6fb; }
+.dark{ background:#7d8ab4; }
 
 .cell:hover{
-  background:#1a2238;
-}
-
-.knight{
-  font-size:26px;
+  outline:2px solid rgba(200,230,255,.6);
 }
 
 .goal{
-  box-shadow:0 0 14px rgba(160,210,255,.9);
-}
-
-h3{
-  position:absolute;
-  top:8%;
-  font-weight:300;
-  opacity:.9;
+  box-shadow: inset 0 0 14px rgba(180,220,255,.9);
 }
 
 #msg{
-  margin-top:20px;
+  margin-top:18px;
   text-align:center;
-  opacity:.85;
+  opacity:0;
+  transition:.9s;
+}
+
+#msg.reveal{
+  opacity:1;
 }
 
 button{
-  margin-top:10px;
+  margin-top:8px;
   padding:8px 14px;
   border-radius:8px;
   border:1px solid #2f3958;
@@ -74,79 +80,75 @@ button{
   cursor:pointer;
 }
 
-button:hover{
-  background:#223054;
-}
-
-.hidden{
-  opacity:0;
-  transition:.8s;
-}
-
-.reveal{
-  opacity:1;
-}
+button:hover{ background:#223054; }
 
 </style>
 </head>
 
 <body>
 
-<h3>the arrow only flies if you choose the right path.</h3>
+<h3>play the plot.</h3>
+<div class="sub">play the horse.</div>
 
 <div class="board" id="board"></div>
 
-<div id="msg" class="hidden">
-  <p>you found the right trajectory.</p>
-  <p>some doors do not open, they align.</p>
+<div id="msg">
+  <p>the arrow reached its final square.</p>
   <button onclick="next()">continue</button>
 </div>
 
 <script>
 
-/* ===== CONFIG ===== */
+/*
+  ===== COORDINATES =====
 
-const SIZE = 5;
+  row 0 = rank 8
+  row 7 = rank 1
+  col 0 = a
+  col 7 = h
 
-// vị trí xuất phát của quân Mã
-let knight = { r: 4, c: 0 };
+  DIỄN BIẾN YÊU CẦU:
 
-// “đích” — đi đúng mới thắng
-const GOAL = { r: 0, c: 3 };
+  start  = c5 → (r3,c2)
+  step1  = a6 → (r2,c0)
+  step2  = d7 → (r1,c3)  ✓ thắng
+*/
 
-// chuỗi nước đi đúng (ẩn)
-// (mỗi bước là 1 ô phải click theo đường đi mã)
-const PATH = [
-  {r:2,c:1},
-  {r:0,c:2},
-  {r:1,c:4},
-  {r:0,c:3}
-];
+/* ===== PIECE POSITIONS ===== */
 
-let step = 0;
+const START = { r:3, c:2 };  // c5
+const STEP1 = { r:2, c:0 };  // a6
+const GOAL  = { r:1, c:3 };  // d7 ✔
 
-/* ===== RENDER BOARD ===== */
+let knight = {...START};
+let progress = 0; // 0 = chưa bước, 1 = đã tới a6
+
+const KING_WHITE = { r:2, c:1 }; // b6
+const BISHOP     = { r:2, c:0 }; // (cùng ô a6 thời điểm kết thúc)
+const KING_BLACK = { r:0, c:1 }; // b8
 
 const board = document.getElementById("board");
+
+
+/* ===== RENDER ===== */
 
 function draw(){
   board.innerHTML = "";
 
-  for(let r=0;r<SIZE;r++){
-    for(let c=0;c<SIZE;c++){
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
 
       const cell = document.createElement("div");
-      cell.className="cell";
+      cell.className = "cell " + ((r+c)%2===0 ? "light" : "dark");
 
-      // highlight goal
       if(r===GOAL.r && c===GOAL.c){
         cell.classList.add("goal");
       }
 
-      // hiển thị quân mã
-      if(r===knight.r && c===knight.c){
-        cell.innerHTML = `<span class="knight">♞</span>`;
-      }
+      if(r===KING_BLACK.r && c===KING_BLACK.c) cell.textContent="♚";
+      if(r===KING_WHITE.r && c===KING_WHITE.c) cell.textContent="♔";
+      if(r===BISHOP.r     && c===BISHOP.c)     cell.textContent="♗";
+      if(r===knight.r     && c===knight.c)     cell.textContent="♞";
 
       cell.onclick = ()=>move(r,c);
 
@@ -157,13 +159,15 @@ function draw(){
 
 draw();
 
-/* ===== CHECK KNIGHT MOVE ===== */
+
+/* ===== RULE: only knight moves ===== */
 
 function isKnightMove(r,c){
   const dr = Math.abs(r-knight.r);
   const dc = Math.abs(c-knight.c);
   return (dr===2 && dc===1) || (dr===1 && dc===2);
 }
+
 
 /* ===== GAME LOGIC ===== */
 
@@ -172,26 +176,30 @@ function move(r,c){
   // phải đi đúng kiểu quân mã
   if(!isKnightMove(r,c)) return reset();
 
-  // phải đúng checkpoint theo PATH
-  const expected = PATH[step];
-  if(!expected || expected.r!==r || expected.c!==c){
-    return reset();
+  // BƯỚC 1 — bắt buộc c5 → a6
+  if(progress === 0){
+    if(r===STEP1.r && c===STEP1.c){
+      knight = {r,c};
+      progress = 1;
+      return draw();
+    }
+    else return reset();
   }
 
-  // cập nhật vị trí
-  knight = {r,c};
-  step++;
-  draw();
-
-  // nếu tới đích đúng
-  if(r===GOAL.r && c===GOAL.c){
-    win();
+  // BƯỚC 2 — bắt buộc a6 → d7
+  if(progress === 1){
+    if(r===GOAL.r && c===GOAL.c){
+      knight = {r,c};
+      draw();
+      return win();
+    }
+    else return reset();
   }
 }
 
 function reset(){
-  knight = {r:4,c:0};
-  step = 0;
+  knight = {...START};
+  progress = 0;
   draw();
 }
 
@@ -200,7 +208,6 @@ function win(){
 }
 
 function next(){
-  // 👉 đổi link tiếp theo tại đây
   window.location.href = "memory.html";
 }
 
@@ -208,4 +215,5 @@ function next(){
 
 </body>
 </html>
+
 
