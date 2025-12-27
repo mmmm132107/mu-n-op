@@ -8,8 +8,8 @@
 body{
   margin:0;
   height:100vh;
-  background:radial-gradient(circle at 40% 20%, #13223a, #050910 70%);
-  color:#e8ecf6;
+  background:radial-gradient(circle at 40% 20%, #0e1830, #02050b 70%);
+  color:#e8ecff;
   font-family:serif;
   display:flex;
   justify-content:center;
@@ -17,49 +17,69 @@ body{
   flex-direction:column;
 }
 
+/* intro text */
 #intro{
   font-size:20px;
   opacity:.95;
+  letter-spacing:.05em;
   transition:.7s;
 }
 .hide{ opacity:0; pointer-events:none; }
 
-.board-wrap{
+/* space stage */
+.stage{
   display:none;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-}
-
-/* bảng 8×8 */
-.board{
   position:relative;
-  display:grid;
-  grid-template-columns:repeat(8,72px);
-  grid-template-rows:repeat(8,72px);
-  border-radius:14px;
+  width:560px;
+  height:560px;
+  border-radius:18px;
+  box-shadow:0 0 60px rgba(120,160,255,.25);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(120,150,255,.18), transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(80,120,255,.12), transparent 45%),
+    #0c1426;
   overflow:hidden;
-  border:2px solid rgba(160,200,255,.35);
-  box-shadow:0 0 34px rgba(100,150,230,.35);
-  background:linear-gradient(145deg,#3c4f79,#1d2945);
 }
 
-/* ô */
-.light{ background:#eef1ff; }
-.dark { background:#8fa1c8; }
+/* faint star field */
+.star{
+  position:absolute;
+  width:3px;
+  height:3px;
+  border-radius:50%;
+  background:#d8e6ff;
+  opacity:.6;
+}
+.star:nth-child(odd){
+  animation: drift 6s ease-in-out infinite;
+}
+@keyframes drift{
+  0%{ transform:translateY(0); }
+  50%{ transform:translateY(-6px); }
+  100%{ transform:translateY(0); }
+}
 
-.cell{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:38px;
+/* chess pieces — glowing */
+.piece{
+  position:absolute;
+  font-size:42px;
+  color:#ffffff;
+  text-shadow:
+    0 0 10px rgba(200,230,255,.9),
+    0 0 20px rgba(160,200,255,.7);
   cursor:pointer;
   user-select:none;
 }
 
-/* thông báo */
+/* king black darker */
+.black{
+  color:#d0d4e0;
+  text-shadow:0 0 10px rgba(120,140,180,.7);
+}
+
+/* status text */
 #status{
-  margin-top:6px;
+  margin-top:12px;
   opacity:0;
   transition:.7s;
 }
@@ -67,11 +87,12 @@ body{
 .success{ color:#a9ffbf; }
 .fail{ color:#ff8f8f; }
 
-/* canvas hiệu ứng tan */
+/* dust canvas */
 #dust{
   position:absolute;
   inset:0;
   pointer-events:none;
+  z-index:0;
 }
 </style>
 </head>
@@ -80,168 +101,144 @@ body{
 
 <div id="intro">play the plot — play the horse</div>
 
-<div class="board-wrap" id="wrap">
-  <div class="board" id="board">
-    <canvas id="dust"></canvas>
-  </div>
-  <div id="status"></div>
+<div class="stage" id="stage">
+  <canvas id="dust"></canvas>
+
+  <!-- small background stars -->
+  <div class="star" style="top:12%;left:22%"></div>
+  <div class="star" style="top:26%;left:74%"></div>
+  <div class="star" style="top:48%;left:18%"></div>
+  <div class="star" style="top:68%;left:42%"></div>
+  <div class="star" style="top:72%;left:66%"></div>
+  <div class="star" style="top:34%;left:82%"></div>
+
+  <!-- pieces (absolute positions instead of chess grid) -->
+
+  <!-- ♚ b8 -->
+  <div id="bk" class="piece black" style="top:40px; left:120px">♚</div>
+
+  <!-- ♔ b6 -->
+  <div id="wk" class="piece" style="top:200px; left:120px">♔</div>
+
+  <!-- ♗ e6 -->
+  <div id="wb" class="piece" style="top:200px; left:360px">♗</div>
+
+  <!-- ♞ c5 (player piece) -->
+  <div id="wn" class="piece" style="top:280px; left:220px">♞</div>
+
 </div>
 
+<div id="status"></div>
+
 <script>
-/*
- BỐ CỤC BAN ĐẦU
- ♚ b8
- ♔ b6
- ♗ e6
- ♞ c5
-
- Người chơi bắt buộc:
-   c5 → a6
-
- Máy tự đi:
-   ♚ b8 → a8
-   ♗ e6 → d5
-
- Sau đó:
-   “The king is captured”
-   → bàn cờ tan thành cát bụi
-   → sang memory.html
-*/
-
-const intro = document.getElementById("intro");
-const wrap  = document.getElementById("wrap");
-const board = document.getElementById("board");
+const intro  = document.getElementById("intro");
+const stage  = document.getElementById("stage");
 const statusBox = document.getElementById("status");
+
+const bk = document.getElementById("bk");
+const wk = document.getElementById("wk");
+const wb = document.getElementById("wb");
+const wn = document.getElementById("wn");
+
 const dust = document.getElementById("dust");
 const ctx = dust.getContext("2d");
 
-/* vị trí quân */
-let knight = {r:3,c:2};
-let kingB  = {r:0,c:1};
-let kingW  = {r:2,c:1};
-let bishop = {r:2,c:4};
-
-const STEP1 = {r:2,c:0}; // a6
 let progressed = false;
 
-/* intro → hiện bàn */
+/* ===== intro → show stage ===== */
 setTimeout(()=>{
   intro.classList.add("hide");
   setTimeout(()=>{
-    wrap.style.display="flex";
-    draw();
+    stage.style.display="block";
     resizeDust();
   },600);
 },900);
 
 window.addEventListener("resize", resizeDust);
-
 function resizeDust(){
-  dust.width = board.clientWidth;
-  dust.height = board.clientHeight;
+  dust.width  = stage.clientWidth;
+  dust.height = stage.clientHeight;
 }
 
-/* vẽ bàn */
-function draw(){
-  board.querySelectorAll(".cell").forEach(n=>n.remove());
-
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
-
-      const d=document.createElement("div");
-      d.className="cell "+((r+c)%2===0?"light":"dark");
-
-      if(r===kingB.r && c===kingB.c) d.textContent="♚";
-      if(r===kingW.r && c===kingW.c) d.textContent="♔";
-      if(r===bishop.r && c===bishop.c) d.textContent="♗";
-      if(r===knight.r && c===knight.c) d.textContent="♞";
-
-      d.onclick=()=>attempt(r,c);
-      board.appendChild(d);
-    }
-  }
+/* ===== helper: animate piece movement ===== */
+function move(el, x, y, cb){
+  el.style.transition="0.6s";
+  el.style.left = x+"px";
+  el.style.top  = y+"px";
+  setTimeout(()=> cb && cb(), 650);
 }
 
-/* nước đi hợp lệ của mã */
-function isKnightMove(r,c){
-  const dr=Math.abs(r-knight.r);
-  const dc=Math.abs(c-knight.c);
-  return (dr===2&&dc===1)||(dr===1&&dc===2);
-}
-
-/* thất bại */
+/* ===== FAIL ===== */
 function fail(){
   statusBox.textContent="mission failed";
   statusBox.className="fail show";
-  setTimeout(()=>location.href="veil.html",1100);
+  setTimeout(()=>location.href="veil.html",1200);
 }
 
-/* hoàn thành */
+/* ===== SUCCESS ===== */
 function succeed(){
   statusBox.textContent="The king is captured";
   statusBox.className="success show";
-
-  setTimeout(()=>dustToSand(),400);
+  setTimeout(()=>dustToSand(),500);
 }
 
-/* xử lý nước đi */
-function attempt(r,c){
+/* ===== CLICK KNIGHT (player move) ===== */
+wn.onclick = ()=>{
 
-  if(!isKnightMove(r,c)) return fail();
+  if(progressed) return;
 
-  if(!progressed){
+  // required move: c5 → a6
+  // we simulate it by moving to left‑top position
+  move(wn, 40, 200, ()=>{
 
-    if(r===STEP1.r && c===STEP1.c){
+    progressed = true;
 
-      knight={r,c};
-      progressed=true;
-      draw();
+    // black king → a8
+    setTimeout(()=>{
+      move(bk, 40, 40, ()=>{
 
-      // máy tự diễn diễn biến
-      setTimeout(()=>{
-        kingB={r:0,c:0};
-        draw();
-
+        // bishop → d5
         setTimeout(()=>{
-          bishop={r:3,c:3};
-          draw();
-          succeed();
-        },600);
+          move(wb, 300, 280, ()=>{
+            succeed();
+          });
+        },450);
 
-      },600);
+      });
+    },450);
 
-    } else return fail();
-  }
-}
+  });
+};
 
-/* ========= 🌫️ hiệu ứng cát bụi ========= */
-
+/* ====== sand dissolve ====== */
 function dustToSand(){
-  const cells=[...document.querySelectorAll(".cell")];
 
+  const pcs = [bk,wk,wb,wn];
   const particles=[];
 
-  cells.forEach(cell=>{
-    const rect = cell.getBoundingClientRect();
-    const br = board.getBoundingClientRect();
+  pcs.forEach(el=>{
+    const r = el.getBoundingClientRect();
+    const s = stage.getBoundingClientRect();
 
-    const x0 = rect.left - br.left;
-    const y0 = rect.top  - br.top;
+    const x0 = r.left - s.left;
+    const y0 = r.top  - s.top;
 
-    for(let i=0;i<24;i++){
+    for(let i=0;i<40;i++){
       particles.push({
-        x:x0+Math.random()*rect.width,
-        y:y0+Math.random()*rect.height,
-        vx:(Math.random()-.5)*1.4,
-        vy:-Math.random()*1.6,
+        x:x0+Math.random()*r.width,
+        y:y0+Math.random()*r.height,
+        vx:(Math.random()-.5)*1.6,
+        vy:-Math.random()*1.8,
         life:1
       });
     }
+
+    el.style.opacity=0;
   });
 
   let t=0;
 
-  function anim(){
+  (function anim(){
     ctx.clearRect(0,0,dust.width,dust.height);
 
     particles.forEach(p=>{
@@ -255,12 +252,9 @@ function dustToSand(){
     });
 
     t++;
-
-    if(t<120) requestAnimationFrame(anim);
+    if(t<140) requestAnimationFrame(anim);
     else location.href="memory.html";
-  }
-
-  anim();
+  })();
 }
 </script>
 
