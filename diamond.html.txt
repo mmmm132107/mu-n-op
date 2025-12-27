@@ -21,7 +21,7 @@
   function check(){
     const v = document.getElementById("pw").value;
     if(v === REAL_PASSWORD){
-      document.getElementById("secret").style.display="block";
+      document.getElementById("diamond").style.display="block";
       document.getElementById("wrong").style.display="none";
     } else {
       document.getElementById("wrong").style.display="block";
