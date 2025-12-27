@@ -1,33 +1,38 @@
 <!DOCTYPE html>
 <html>
-<body>
-  <h2>Enter password</h2>
+<body style="font-family:serif; text-align:center; margin-top:80px">
 
-  <input id="pw" type="password">
-  <button onclick="check()">Open</button>
+  <h3>enter the key</h3>
 
-  <p id="wrong" style="color:red;display:none">
-    wrong key
+  <input id="pw" type="password" placeholder="password">
+  <button onclick="check()">open</button>
+
+  <p id="wrong" style="color:#c0392b; display:none">
+    not this one.
   </p>
 
-  <div id="diamond" style="display:none">
-    <h3>🌙 Welcome to the secret page</h3>
-    <p>(sau này bạn thay nội dung này)</p>
+  <!-- nội dung bí mật -->
+  <div id="secret" style="display:none; margin-top:40px">
+    <h2>🌙 welcome</h2>
+    <p>only those who know… may stay.</p>
   </div>
 
 <script>
-  const REAL_PASSWORD = "midnight";
+  const KEY = "midnight";   // mật khẩu ở đây
 
   function check(){
     const v = document.getElementById("pw").value;
-    if(v === REAL_PASSWORD){
-      document.getElementById("diamond").style.display="block";
-      document.getElementById("wrong").style.display="none";
+
+    if(v === KEY){
+      document.getElementById("secret").style.display = "block";
+      document.getElementById("wrong").style.display = "none";
     } else {
-      document.getElementById("wrong").style.display="block";
+      document.getElementById("wrong").style.display = "block";
     }
   }
 </script>
 
 </body>
 </html>
+
+
