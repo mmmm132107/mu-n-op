@@ -1,1 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>sagittarius</title>
+
+<style>
+
+body{
+  margin:0;
+  height:100vh;
+  background:#05060a;
+  color:#e6e6e6;
+  font-family:serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.board{
+  display:grid;
+  grid-template-columns:repeat(5,70px);
+  grid-template-rows:repeat(5,70px);
+  gap:4px;
+  padding:14px;
+  border:1px solid #333a4d;
+  border-radius:14px;
+  background:#0b0f18;
+  box-shadow:0 0 40px rgba(90,120,190,.25);
+}
+
+.cell{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:10px;
+  background:#101626;
+  cursor:pointer;
+  transition:.25s;
+}
+
+.cell:hover{
+  background:#1a2238;
+}
+
+.knight{
+  font-size:26px;
+}
+
+.goal{
+  box-shadow:0 0 14px rgba(160,210,255,.9);
+}
+
+h3{
+  position:absolute;
+  top:8%;
+  font-weight:300;
+  opacity:.9;
+}
+
+#msg{
+  margin-top:20px;
+  text-align:center;
+  opacity:.85;
+}
+
+button{
+  margin-top:10px;
+  padding:8px 14px;
+  border-radius:8px;
+  border:1px solid #2f3958;
+  background:#18223a;
+  color:#e6e6e6;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#223054;
+}
+
+.hidden{
+  opacity:0;
+  transition:.8s;
+}
+
+.reveal{
+  opacity:1;
+}
+
+</style>
+</head>
+
+<body>
+
+<h3>the arrow only flies if you choose the right path.</h3>
+
+<div class="board" id="board"></div>
+
+<div id="msg" class="hidden">
+  <p>you found the right trajectory.</p>
+  <p>some doors do not open, they align.</p>
+  <button onclick="next()">continue</button>
+</div>
+
+<script>
+
+/* ===== CONFIG ===== */
+
+const SIZE = 5;
+
+// vị trí xuất phát của quân Mã
+let knight = { r: 4, c: 0 };
+
+// “đích” — đi đúng mới thắng
+const GOAL = { r: 0, c: 3 };
+
+// chuỗi nước đi đúng (ẩn)
+// (mỗi bước là 1 ô phải click theo đường đi mã)
+const PATH = [
+  {r:2,c:1},
+  {r:0,c:2},
+  {r:1,c:4},
+  {r:0,c:3}
+];
+
+let step = 0;
+
+/* ===== RENDER BOARD ===== */
+
+const board = document.getElementById("board");
+
+function draw(){
+  board.innerHTML = "";
+
+  for(let r=0;r<SIZE;r++){
+    for(let c=0;c<SIZE;c++){
+
+      const cell = document.createElement("div");
+      cell.className="cell";
+
+      // highlight goal
+      if(r===GOAL.r && c===GOAL.c){
+        cell.classList.add("goal");
+      }
+
+      // hiển thị quân mã
+      if(r===knight.r && c===knight.c){
+        cell.innerHTML = `<span class="knight">♞</span>`;
+      }
+
+      cell.onclick = ()=>move(r,c);
+
+      board.appendChild(cell);
+    }
+  }
+}
+
+draw();
+
+/* ===== CHECK KNIGHT MOVE ===== */
+
+function isKnightMove(r,c){
+  const dr = Math.abs(r-knight.r);
+  const dc = Math.abs(c-knight.c);
+  return (dr===2 && dc===1) || (dr===1 && dc===2);
+}
+
+/* ===== GAME LOGIC ===== */
+
+function move(r,c){
+
+  // phải đi đúng kiểu quân mã
+  if(!isKnightMove(r,c)) return reset();
+
+  // phải đúng checkpoint theo PATH
+  const expected = PATH[step];
+  if(!expected || expected.r!==r || expected.c!==c){
+    return reset();
+  }
+
+  // cập nhật vị trí
+  knight = {r,c};
+  step++;
+  draw();
+
+  // nếu tới đích đúng
+  if(r===GOAL.r && c===GOAL.c){
+    win();
+  }
+}
+
+function reset(){
+  knight = {r:4,c:0};
+  step = 0;
+  draw();
+}
+
+function win(){
+  document.getElementById("msg").classList.add("reveal");
+}
+
+function next(){
+  // 👉 đổi link tiếp theo tại đây
+  window.location.href = "memory.html";
+}
+
+</script>
+
+</body>
+</html>
 
