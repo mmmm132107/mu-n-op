@@ -8,7 +8,7 @@
 body{
   margin:0;
   height:100vh;
-  background:radial-gradient(circle at 40% 20%, #14233d, #050912 70%);
+  background:radial-gradient(circle at 40% 20%, #13223a, #050910 70%);
   color:#e8ecf6;
   font-family:serif;
   display:flex;
@@ -17,7 +17,6 @@ body{
   flex-direction:column;
 }
 
-/* intro */
 #intro{
   font-size:20px;
   opacity:.95;
@@ -25,29 +24,16 @@ body{
 }
 .hide{ opacity:0; pointer-events:none; }
 
-/* layout có trục a‑h / 1‑8 */
-.board-frame{
+.board-wrap{
   display:none;
   flex-direction:column;
   align-items:center;
-  gap:6px;
+  gap:10px;
 }
 
-.board-wrap{
-  display:grid;
-  grid-template-columns:28px auto;
-  grid-template-rows:auto 28px;
-  gap:4px;
-}
-
-.axis{
-  display:grid;
-  place-items:center;
-  color:#b9c7ec;
-  font-size:14px;
-}
-
+/* bảng 8×8 */
 .board{
+  position:relative;
   display:grid;
   grid-template-columns:repeat(8,72px);
   grid-template-rows:repeat(8,72px);
@@ -55,15 +41,12 @@ body{
   overflow:hidden;
   border:2px solid rgba(160,200,255,.35);
   box-shadow:0 0 34px rgba(100,150,230,.35);
+  background:linear-gradient(145deg,#3c4f79,#1d2945);
 }
 
-/* ô sáng / tối — gradient nhưng tương phản */
-.light{
-  background:linear-gradient(145deg,#f6f8ff,#d8e0ff);
-}
-.dark{
-  background:linear-gradient(145deg,#6e82b8,#3f4f7f);
-}
+/* ô */
+.light{ background:#eef1ff; }
+.dark { background:#8fa1c8; }
 
 .cell{
   display:flex;
@@ -73,20 +56,23 @@ body{
   cursor:pointer;
   user-select:none;
 }
-.cell:hover{
-  outline:2px solid rgba(220,240,255,.6);
-}
 
-/* message */
+/* thông báo */
 #status{
-  margin-top:10px;
-  font-style:italic;
+  margin-top:6px;
   opacity:0;
   transition:.7s;
 }
 #status.show{ opacity:1; }
-.success{ color:#9fffae; }
+.success{ color:#a9ffbf; }
 .fail{ color:#ff8f8f; }
+
+/* canvas hiệu ứng tan */
+#dust{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
 </style>
 </head>
 
@@ -94,133 +80,188 @@ body{
 
 <div id="intro">play the plot — play the horse</div>
 
-<div class="board-frame" id="frame">
-  <div class="board-wrap">
-    <div id="yAxis" class="axis"></div>
-    <div class="board" id="board"></div>
-    <div></div>
-    <div id="xAxis" class="axis"></div>
+<div class="board-wrap" id="wrap">
+  <div class="board" id="board">
+    <canvas id="dust"></canvas>
   </div>
   <div id="status"></div>
 </div>
 
 <script>
 /*
-  TRẠNG THÁI BAN ĐẦU (giống ảnh)
+ BỐ CỤC BAN ĐẦU
+ ♚ b8
+ ♔ b6
+ ♗ e6
+ ♞ c5
 
-  ♚ b8 = (0,1)
-  ♔ b6 = (2,1)
-  ♗ e6 = (2,4)
-  ♞ c5 = (3,2)
+ Người chơi bắt buộc:
+   c5 → a6
 
-  Người chơi bắt buộc:
-    ♞ c5 → a6 (3,2 → 2,0)
+ Máy tự đi:
+   ♚ b8 → a8
+   ♗ e6 → d5
 
-  Sau đó máy tự động:
-    ♚ b8 → a8
-    ♗ e6 → d5
+ Sau đó:
+   “The king is captured”
+   → bàn cờ tan thành cát bụi
+   → sang memory.html
 */
 
 const intro = document.getElementById("intro");
-const frame = document.getElementById("frame");
+const wrap  = document.getElementById("wrap");
 const board = document.getElementById("board");
 const statusBox = document.getElementById("status");
+const dust = document.getElementById("dust");
+const ctx = dust.getContext("2d");
 
-/* quân */
-let knight = { r:3, c:2 };
-let kingBlack = { r:0, c:1 };
-let kingWhite = { r:2, c:1 };
-let bishop    = { r:2, c:4 };
+/* vị trí quân */
+let knight = {r:3,c:2};
+let kingB  = {r:0,c:1};
+let kingW  = {r:2,c:1};
+let bishop = {r:2,c:4};
 
-const STEP1 = { r:2, c:0 }; // a6
+const STEP1 = {r:2,c:0}; // a6
 let progressed = false;
-
-/* trục toạ độ */
-(function axes(){
-  const y = document.getElementById("yAxis");
-  const x = document.getElementById("xAxis");
-  for(let i=8;i>=1;i--){
-    let d=document.createElement("div"); d.textContent=i; y.appendChild(d);
-  }
-  for(let c of "abcdefgh"){
-    let d=document.createElement("div"); d.textContent=c; x.appendChild(d);
-  }
-})();
 
 /* intro → hiện bàn */
 setTimeout(()=>{
   intro.classList.add("hide");
   setTimeout(()=>{
-    frame.style.display="flex";
+    wrap.style.display="flex";
     draw();
+    resizeDust();
   },600);
-},1100);
+},900);
 
+window.addEventListener("resize", resizeDust);
+
+function resizeDust(){
+  dust.width = board.clientWidth;
+  dust.height = board.clientHeight;
+}
+
+/* vẽ bàn */
 function draw(){
-  board.innerHTML="";
+  board.querySelectorAll(".cell").forEach(n=>n.remove());
+
   for(let r=0;r<8;r++){
     for(let c=0;c<8;c++){
-      const cell=document.createElement("div");
-      cell.className="cell "+((r+c)%2===0?"light":"dark");
 
-      if(r===kingBlack.r && c===kingBlack.c) cell.textContent="♚";
-      if(r===kingWhite.r && c===kingWhite.c) cell.textContent="♔";
-      if(r===bishop.r    && c===bishop.c)    cell.textContent="♗";
-      if(r===knight.r    && c===knight.c)    cell.textContent="♞";
+      const d=document.createElement("div");
+      d.className="cell "+((r+c)%2===0?"light":"dark");
 
-      cell.onclick=()=>attempt(r,c);
-      board.appendChild(cell);
+      if(r===kingB.r && c===kingB.c) d.textContent="♚";
+      if(r===kingW.r && c===kingW.c) d.textContent="♔";
+      if(r===bishop.r && c===bishop.c) d.textContent="♗";
+      if(r===knight.r && c===knight.c) d.textContent="♞";
+
+      d.onclick=()=>attempt(r,c);
+      board.appendChild(d);
     }
   }
 }
 
+/* nước đi hợp lệ của mã */
 function isKnightMove(r,c){
   const dr=Math.abs(r-knight.r);
   const dc=Math.abs(c-knight.c);
   return (dr===2&&dc===1)||(dr===1&&dc===2);
 }
 
+/* thất bại */
 function fail(){
-  statusBox.textContent="mission failed.";
+  statusBox.textContent="mission failed";
   statusBox.className="fail show";
-  setTimeout(()=>window.location.href="veil.html",1200);
+  setTimeout(()=>location.href="veil.html",1100);
 }
 
+/* hoàn thành */
 function succeed(){
-  statusBox.textContent="The king is captured.";
+  statusBox.textContent="The king is captured";
   statusBox.className="success show";
-  setTimeout(()=>window.location.href="memory.html",1200);
+
+  setTimeout(()=>dustToSand(),400);
 }
 
+/* xử lý nước đi */
 function attempt(r,c){
+
   if(!isKnightMove(r,c)) return fail();
 
-  // chỉ chấp nhận c5 → a6
   if(!progressed){
+
     if(r===STEP1.r && c===STEP1.c){
+
       knight={r,c};
       progressed=true;
       draw();
 
-      // máy diễn biến
+      // máy tự diễn diễn biến
       setTimeout(()=>{
-        kingBlack={r:0,c:0}; // b8→a8
+        kingB={r:0,c:0};
         draw();
+
         setTimeout(()=>{
-          bishop={r:3,c:3};  // e6→d5
+          bishop={r:3,c:3};
           draw();
           succeed();
         },600);
+
       },600);
-    }
-    else return fail();
+
+    } else return fail();
   }
 }
-</script>
 
-</body>
-</html>
+/* ========= 🌫️ hiệu ứng cát bụi ========= */
 
+function dustToSand(){
+  const cells=[...document.querySelectorAll(".cell")];
+
+  const particles=[];
+
+  cells.forEach(cell=>{
+    const rect = cell.getBoundingClientRect();
+    const br = board.getBoundingClientRect();
+
+    const x0 = rect.left - br.left;
+    const y0 = rect.top  - br.top;
+
+    for(let i=0;i<24;i++){
+      particles.push({
+        x:x0+Math.random()*rect.width,
+        y:y0+Math.random()*rect.height,
+        vx:(Math.random()-.5)*1.4,
+        vy:-Math.random()*1.6,
+        life:1
+      });
+    }
+  });
+
+  let t=0;
+
+  function anim(){
+    ctx.clearRect(0,0,dust.width,dust.height);
+
+    particles.forEach(p=>{
+      p.x+=p.vx;
+      p.y+=p.vy;
+      p.vy+=0.02;
+      p.life-=0.01;
+
+      ctx.fillStyle=`rgba(210,225,255,${p.life})`;
+      ctx.fillRect(p.x,p.y,2,2);
+    });
+
+    t++;
+
+    if(t<120) requestAnimationFrame(anim);
+    else location.href="memory.html";
+  }
+
+  anim();
+}
 </script>
 
 </body>
