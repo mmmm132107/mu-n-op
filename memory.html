@@ -8,238 +8,189 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-    body {
-        margin: 0;
-        min-height: 200vh;
-        background: #080808;
-        font-family: "Be Vietnam Pro", system-ui, sans-serif;
-        color: #f3e6d8;
-        scroll-behavior: smooth;
-        overflow-x: hidden;
-    }
+body{
+  margin:0;
+  min-height:200vh;
+  background:#080808;
+  font-family:"Be Vietnam Pro",system-ui,sans-serif;
+  color:#f3e6d8;
+  scroll-behavior:smooth;
+  overflow-x:hidden;
+}
 
-    /* màn hình đầu */
-    .center {
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-    }
+/* màn hình đầu */
+.center{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+}
 
-    .title {
-        font-size: 40px;
-        letter-spacing: 1.2px;
-        cursor: pointer;
-        transition: .35s;
-    }
+.title{
+  font-size:40px;
+  letter-spacing:1.2px;
+  cursor:pointer;
+  transition:.3s;
+}
+.title:hover{transform:scale(1.05);opacity:.9}
 
-    .title:hover {
-        transform: scale(1.05);
-        opacity: .9;
-    }
+/* frame */
+.square{
+  width:16px;
+  height:16px;
+  border:1px solid #d8c8b8;
+  position:absolute;
+  transition:.25s;
+  pointer-events:auto;
+}
+.square:hover{background:#d6c2b1}
 
-    /* FRAME toàn màn hình */
-    .square {
-        width: 16px;
-        height: 16px;
-        border: 1px solid #d8c8b8;
-        position: absolute;
-        transition: .25s;
-        pointer-events: auto;
-        background: transparent;
-    }
+/* noise overlay */
+.noise{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity:.15;
+  mix-blend-mode:screen;
+  animation:grain 6s steps(10) infinite;
+}
+@keyframes grain{
+  0%{transform:translate(0,0)}
+  20%{transform:translate(-10px,6px)}
+  40%{transform:translate(8px,-4px)}
+  60%{transform:translate(-6px,8px)}
+  80%{transform:translate(4px,-6px)}
+  100%{transform:translate(0,0)}
+}
 
-    .square:hover {
-        background: #d6c2b1;
-    }
+/* fade transition */
+.fade{
+  position:fixed;
+  inset:0;
+  background:#000;
+  opacity:0;
+  pointer-events:none;
+  transition:1s ease;
+}
+.fade.show{opacity:1}
 
-    /* ô bí mật hoàn toàn giống các ô khác */
-    .secret-square { }
-
-    /* noise film overlay */
-    .noise {
-        pointer-events: none;
-        position: fixed;
-        inset: 0;
-        background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-        opacity: .15;
-        mix-blend-mode: screen;
-        animation: grain 6s steps(10) infinite;
-    }
-
-    @keyframes grain {
-        0% { transform: translate(0,0); }
-        20% { transform: translate(-10px, 6px); }
-        40% { transform: translate(8px, -4px); }
-        60% { transform: translate(-6px, 8px); }
-        80% { transform: translate(4px, -6px); }
-        100% { transform: translate(0,0); }
-    }
-
-    /* transition fade */
-    .fade-layer {
-        position: fixed;
-        inset: 0;
-        background: #000;
-        opacity: 0;
-        pointer-events: none;
-        transition: 1.2s ease;
-    }
-
-    .fade-layer.show {
-        opacity: 1;
-    }
-
-    /* story */
-    .story {
-        max-width: 880px;
-        margin: 90px auto 160px;
-        padding: 0 26px;
-        line-height: 1.75;
-        font-size: 17px;
-        text-align: justify;
-        opacity: 0;
-        transform: translateY(20px);
-        transition: .7s ease;
-    }
-
-    .story.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    .typewriter span {
-        opacity: 0;
-    }
+/* đoạn văn */
+.story{
+  max-width:880px;
+  margin:90px auto 160px;
+  padding:0 26px;
+  line-height:1.75;
+  font-size:17px;
+  text-align:justify;
+  opacity:0;
+  transform:translateY(20px);
+  transition:.7s ease;
+}
+.story.show{opacity:1;transform:translateY(0)}
 </style>
 </head>
 
 <body>
 
-<div class="fade-layer" id="fade"></div>
+<div class="fade" id="fade"></div>
 <div class="noise"></div>
 
 <section class="center">
-    <div class="title" id="goCall">
-        My love story
-    </div>
+  <div class="title" id="goCall">My love story</div>
 </section>
 
-<section id="story" class="story typewriter"></section>
-
-<!-- âm thanh -->
-<audio id="horse" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_d0ecbd2d5d.mp3?filename=horse-neigh-70327.mp3"></audio>
-<audio id="wind" src="https://cdn.pixabay.com/download/audio/2021/09/07/audio_8d9cb6805a.mp3?filename=wind-blowing-ambient-ambient-wind-6925.mp3" loop></audio>
+<section id="story" class="story"></section>
 
 <script>
 const fade = document.getElementById("fade");
 const storyBox = document.getElementById("story");
 const goCall = document.getElementById("goCall");
-const horse = document.getElementById("horse");
-const wind = document.getElementById("wind");
 
-/* click title → sang call.html */
+/* nhấn title → sang call.html */
 goCall.onclick = () => window.location.href = "call.html";
 
-/* nội dung đoạn văn */
-const storyText = 
-"Con ngựa ấy ở lại bãi cỏ vì ngũ cốc và mái chuồng quen thuộc. " +
-"Nó nhiều lần tự nhủ rằng rồi sẽ rời đi và chạy đến một dải thảo nguyên xanh ngắt. " +
-"Nhưng mỗi lần đến sát ranh giới của sự dứt bỏ, tim nó lại mềm ra trước những điều đã làm nó hạnh phúc. " +
-"Phía trước là tự do, còn phía sau là người đã buộc sợi dây bằng cả quan tâm lẫn sự tiện lợi. " +
+/* nội dung */
+const text =
+"Con ngựa ấy ở lại bãi cỏ vì ngũ cốc và mái chuồng quen thuộc. "+
+"Nó nhiều lần tự nhủ rằng rồi sẽ rời đi và chạy đến một dải thảo nguyên xanh ngắt. "+
+"Nhưng mỗi lần đến sát ranh giới của sự dứt bỏ, tim nó lại mềm ra trước những điều đã làm nó hạnh phúc. "+
+"Phía trước là tự do, còn phía sau là người đã buộc sợi dây bằng cả quan tâm lẫn sự tiện lợi. "+
 "Và thế là nó quay đầu. Nó đã lỡ yêu nơi ấy quá nhiều để rời đi.";
 
-/* typewriter effect */
-function typewriter(element, text, speed = 40) {
-    element.innerHTML = "";
-    let i = 0;
-
-    function step() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(step, speed);
-        }
+/* typewriter */
+function typewriter(el, str, speed=32){
+  el.innerHTML="";
+  let i=0;
+  (function step(){
+    if(i<str.length){
+      el.innerHTML+=str[i++];
+      setTimeout(step,speed);
     }
-    step();
+  })();
 }
 
-/* tạo frame bao full màn */
-function createFrame() {
-    const gap = 32;
-    const rows = Math.floor(window.innerHeight / gap);
-    const cols = Math.floor(window.innerWidth / gap);
+/* tạo frame bao full màn hình + ô bí mật cố định */
+function createFrame(){
+  const gap = 32;
+  const rows = Math.floor(window.innerHeight/gap);
+  const cols = Math.floor(window.innerWidth/gap);
 
-    let secretPlaced = false;
-    let secretR = Math.floor(Math.random() * (rows + 1));
-    let secretC = Math.floor(Math.random() * (cols + 1));
+  const secretR = rows;   // góc dưới
+  const secretC = 0;      // mép trái
 
-    for (let r = 0; r <= rows; r++) {
-        for (let c = 0; c <= cols; c++) {
+  for(let r=0;r<=rows;r++){
+    for(let c=0;c<=cols;c++){
 
-            const edge =
-                r === 0 || r === rows ||
-                c === 0 || c === cols;
+      const edge =
+        r===0 || r===rows ||
+        c===0 || c===cols;
 
-            if (!edge) continue;
+      if(!edge) continue;
 
-            const sq = document.createElement("div");
-            sq.classList.add("square");
+      const s = document.createElement("div");
+      s.className="square";
+      s.style.top = r*gap+"px";
+      s.style.left = c*gap+"px";
 
-            sq.style.top = r * gap + "px";
-            sq.style.left = c * gap + "px";
+      /* ô bí mật — giống hệt mọi ô */
+      if(r===secretR && c===secretC){
+        s.addEventListener("click", triggerSecret);
+      }
 
-            /* chọn ngẫu nhiên 1 ô bí mật — nhưng nhìn y hệt */
-            if (!secretPlaced && r === secretR && c === secretC) {
-                sq.classList.add("secret-square");
-                sq.addEventListener("click", secretTrigger);
-                secretPlaced = true;
-            }
-
-            document.body.appendChild(sq);
-        }
+      document.body.appendChild(s);
     }
+  }
 }
 
 createFrame();
 
-/* hành động khi bấm đúng ô bí mật */
-function secretTrigger() {
+/* hành động khi chạm đúng ô */
+function triggerSecret(){
 
-    /* fade to black */
-    fade.classList.add("show");
+  fade.classList.add("show");
 
-    /* âm thanh: ngựa hí → gió */
-    horse.currentTime = 0;
-    horse.play().catch(()=>{});
+  setTimeout(()=>{
+    fade.classList.remove("show");
 
-    horse.onended = () => {
-        wind.volume = .6;
-        wind.play().catch(()=>{});
-    };
+    storyBox.scrollIntoView({behavior:"smooth"});
 
-    /* delay rồi mở cảnh ký ức */
-    setTimeout(() => {
-        fade.classList.remove("show");
+    setTimeout(()=>{
+      storyBox.classList.add("show");
+      typewriter(storyBox,text,28);
+    },400);
 
-        storyBox.scrollIntoView({ behavior: "smooth" });
+    /* đợi người đọc rồi chuyển cảnh */
+    setTimeout(()=>{
+      window.location.href="call.html";
+    },6000);
 
-        setTimeout(() => {
-            storyBox.classList.add("show");
-            typewriter(storyBox, storyText, 32);
-        }, 400);
-
-        /* đợi người xem rồi sang call.html */
-        setTimeout(() => {
-            wind.pause();
-            window.location.href = "call.html";
-        }, 6000);
-
-    }, 1600);
+  },900);
 }
 </script>
 
 </body>
 </html>
+
 
