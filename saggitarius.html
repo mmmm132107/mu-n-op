@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <title>sagittarius</title>
 
 <style>
@@ -9,7 +9,7 @@
 body{
   margin:0;
   height:100vh;
-  background:#05060a;
+  background:#06070b;
   color:#e6e6e6;
   font-family:serif;
   display:flex;
@@ -18,68 +18,77 @@ body{
   flex-direction:column;
 }
 
+/* tiêu đề */
 h3{
-  margin-bottom:10px;
+  margin-bottom:6px;
   font-weight:300;
-  opacity:.9;
+}
+.sub{ opacity:.7; font-style:italic; margin-bottom:14px; }
+
+/* khung tổng */
+.board-wrap{
+  display:grid;
+  grid-template-columns:30px auto;
+  grid-template-rows:auto 30px;
+  gap:4px;
 }
 
-.sub{
-  opacity:.7;
-  margin-bottom:14px;
-  font-style:italic;
+/* nhãn trục */
+.axis{
+  display:grid;
+  place-items:center;
+  color:#aeb7d2;
+  font-size:14px;
 }
 
+/* bảng 8×8 */
 .board{
   display:grid;
-  grid-template-columns:repeat(8,70px);
-  grid-template-rows:repeat(8,70px);
-  border:1px solid #2b3248;
+  grid-template-columns:repeat(8,72px);
+  grid-template-rows:repeat(8,72px);
   border-radius:12px;
   overflow:hidden;
-  box-shadow:0 0 40px rgba(90,120,190,.25);
+  border:2px solid #2b3558;
+  box-shadow:0 0 36px rgba(120,150,220,.25);
 }
 
 .cell{
   display:flex;
   justify-content:center;
   align-items:center;
-  font-size:34px;
+  font-size:36px;
+  user-select:none;
   cursor:pointer;
 }
 
-.light{ background:#f5f6fb; }
-.dark{ background:#7d8ab4; }
+.light{ background:#f4f6fc; }
+.dark { background:#8fa0c8; }
 
 .cell:hover{
-  outline:2px solid rgba(200,230,255,.6);
+  outline:2px solid rgba(220,240,255,.7);
 }
 
 .goal{
   box-shadow: inset 0 0 14px rgba(180,220,255,.9);
 }
 
+/* thông báo */
 #msg{
-  margin-top:18px;
-  text-align:center;
+  margin-top:16px;
   opacity:0;
-  transition:.9s;
+  transition:.8s;
 }
-
-#msg.reveal{
-  opacity:1;
-}
+#msg.reveal{ opacity:1; }
 
 button{
   margin-top:8px;
   padding:8px 14px;
   border-radius:8px;
   border:1px solid #2f3958;
-  background:#18223a;
+  background:#1a233c;
   color:#e6e6e6;
   cursor:pointer;
 }
-
 button:hover{ background:#223054; }
 
 </style>
@@ -90,48 +99,80 @@ button:hover{ background:#223054; }
 <h3>play the plot.</h3>
 <div class="sub">play the horse.</div>
 
-<div class="board" id="board"></div>
+<div class="board-wrap">
+
+  <!-- trục dọc (8→1) -->
+  <div id="yAxis" class="axis"></div>
+
+  <!-- bàn cờ -->
+  <div class="board" id="board"></div>
+
+  <!-- trục ngang (a→h) -->
+  <div></div>
+  <div id="xAxis" class="axis"></div>
+</div>
 
 <div id="msg">
-  <p>the arrow reached its final square.</p>
+  <p>the pieces moved as written.</p>
   <button onclick="next()">continue</button>
 </div>
 
 <script>
 
 /*
-  ===== COORDINATES =====
+  TOẠ ĐỘ
 
-  row 0 = rank 8
-  row 7 = rank 1
-  col 0 = a
-  col 7 = h
+  row 0 → rank 8
+  row 7 → rank 1
+  col 0 → a
+  col 7 → h
 
-  DIỄN BIẾN YÊU CẦU:
+  TRẠNG THÁI BAN ĐẦU (theo hình)
 
-  start  = c5 → (r3,c2)
-  step1  = a6 → (r2,c0)
-  step2  = d7 → (r1,c3)  ✓ thắng
+  ♚ vua đen  = b8 → (0,1)
+  ♔ vua trắng = b6 → (2,1)
+  ♗ tượng     = e6 → (2,4)
+  ♞ mã        = c5 → (3,2)
+
+  YÊU CẦU DIỄN BIẾN
+
+  1️⃣ người chơi đi ♞ c5 → a6 (3,2 → 2,0)
+  2️⃣ máy đi ♚ b8 → a8 (0,1 → 0,0)
+  3️⃣ máy đi ♗ e6 → d5 (2,4 → 3,3)
 */
-
-/* ===== PIECE POSITIONS ===== */
-
-const START = { r:3, c:2 };  // c5
-const STEP1 = { r:2, c:0 };  // a6
-const GOAL  = { r:1, c:3 };  // d7 ✔
-
-let knight = {...START};
-let progress = 0; // 0 = chưa bước, 1 = đã tới a6
-
-const KING_WHITE = { r:2, c:1 }; // b6
-const BISHOP     = { r:2, c:0 }; // (cùng ô a6 thời điểm kết thúc)
-const KING_BLACK = { r:0, c:1 }; // b8
 
 const board = document.getElementById("board");
 
+/* toạ độ quân */
+let knight = { r:3, c:2 }; // c5
+let kingBlack = { r:0, c:1 }; // b8
+let kingWhite = { r:2, c:1 }; // b6
+let bishop    = { r:2, c:4 }; // e6
 
-/* ===== RENDER ===== */
+/* checkpoint */
+const STEP1_TARGET = { r:2, c:0 }; // a6
 
+let progressed = false;
+
+/* trục toạ độ */
+(function drawAxes(){
+  const y = document.getElementById("yAxis");
+  const x = document.getElementById("xAxis");
+
+  for(let i=8;i>=1;i--){
+    const d=document.createElement("div");
+    d.textContent=i;
+    y.appendChild(d);
+  }
+
+  for(let c of "abcdefgh"){
+    const d=document.createElement("div");
+    d.textContent=c;
+    x.appendChild(d);
+  }
+})();
+
+/* vẽ bàn */
 function draw(){
   board.innerHTML = "";
 
@@ -141,16 +182,12 @@ function draw(){
       const cell = document.createElement("div");
       cell.className = "cell " + ((r+c)%2===0 ? "light" : "dark");
 
-      if(r===GOAL.r && c===GOAL.c){
-        cell.classList.add("goal");
-      }
+      if(r===knight.r && c===knight.c) cell.textContent="♞";
+      if(r===bishop.r && c===bishop.c) cell.textContent="♗";
+      if(r===kingWhite.r && c===kingWhite.c) cell.textContent="♔";
+      if(r===kingBlack.r && c===kingBlack.c) cell.textContent="♚";
 
-      if(r===KING_BLACK.r && c===KING_BLACK.c) cell.textContent="♚";
-      if(r===KING_WHITE.r && c===KING_WHITE.c) cell.textContent="♔";
-      if(r===BISHOP.r     && c===BISHOP.c)     cell.textContent="♗";
-      if(r===knight.r     && c===knight.c)     cell.textContent="♞";
-
-      cell.onclick = ()=>move(r,c);
+      cell.onclick = ()=>tryMove(r,c);
 
       board.appendChild(cell);
     }
@@ -159,51 +196,56 @@ function draw(){
 
 draw();
 
-
-/* ===== RULE: only knight moves ===== */
-
+/* luật đi quân mã */
 function isKnightMove(r,c){
   const dr = Math.abs(r-knight.r);
   const dc = Math.abs(c-knight.c);
   return (dr===2 && dc===1) || (dr===1 && dc===2);
 }
 
-
-/* ===== GAME LOGIC ===== */
-
-function move(r,c){
-
-  // phải đi đúng kiểu quân mã
-  if(!isKnightMove(r,c)) return reset();
-
-  // BƯỚC 1 — bắt buộc c5 → a6
-  if(progress === 0){
-    if(r===STEP1.r && c===STEP1.c){
-      knight = {r,c};
-      progress = 1;
-      return draw();
-    }
-    else return reset();
-  }
-
-  // BƯỚC 2 — bắt buộc a6 → d7
-  if(progress === 1){
-    if(r===GOAL.r && c===GOAL.c){
-      knight = {r,c};
-      draw();
-      return win();
-    }
-    else return reset();
-  }
-}
-
+/* reset */
 function reset(){
-  knight = {...START};
-  progress = 0;
+  knight = { r:3, c:2 };
+  kingBlack = { r:0, c:1 };
+  bishop    = { r:2, c:4 };
+  progressed = false;
   draw();
 }
 
-function win(){
+/* xử lý nước đi */
+function tryMove(r,c){
+
+  if(!isKnightMove(r,c)) return reset();
+
+  // bước yêu cầu duy nhất: c5 → a6
+  if(!progressed){
+
+    // phải đúng ô a6
+    if(r===STEP1_TARGET.r && c===STEP1_TARGET.c){
+
+      knight = {r,c};
+      progressed = true;
+      draw();
+
+      // máy tự đi 2 nước kế
+      setTimeout(()=>{
+        kingBlack = { r:0, c:0 }; // b8→a8
+        draw();
+
+        setTimeout(()=>{
+          bishop = { r:3, c:3 }; // e6→d5
+          draw();
+          finish();
+        }, 600);
+
+      }, 600);
+
+    } else return reset();
+  }
+}
+
+/* hoàn tất cảnh */
+function finish(){
   document.getElementById("msg").classList.add("reveal");
 }
 
@@ -212,6 +254,9 @@ function next(){
 }
 
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
