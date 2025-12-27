@@ -7,31 +7,64 @@
 <style>
 
 body{
-  background:#08090c;
+  margin:0;
+  height:100vh;
+  overflow:hidden;
+  background:#06070a;
   color:#e6e6e6;
   font-family:serif;
-  height:100vh;
   display:flex;
-  flex-direction:column;
-  align-items:center;
   justify-content:center;
-  margin:0;
+  align-items:center;
 }
 
-/* subtle glow bg */
+/* 🌌 infinite drifting gradient */
 .bg{
   position:absolute;
-  width:130%;
-  height:130%;
-  filter:blur(60px);
-  background:radial-gradient(circle at 40% 30%, #1b1f2e, transparent 45%),
-             radial-gradient(circle at 70% 70%, #0f1726, transparent 45%);
-  opacity:.6;
+  width:180%;
+  height:180%;
+  background:
+    radial-gradient(circle at 20% 30%, #1b2135, transparent 40%),
+    radial-gradient(circle at 70% 70%, #0c1224, transparent 45%),
+    radial-gradient(circle at 55% 20%, #2c3f73, transparent 40%);
+  filter:blur(70px);
+  opacity:.65;
+  animation: drift 40s linear infinite;
 }
 
+@keyframes drift{
+  0%{ transform:translate(-6%,-4%) scale(1); }
+  50%{ transform:translate(6%,4%) scale(1.06); }
+  100%{ transform:translate(-6%,-4%) scale(1); }
+}
+
+/* 💎 floating gemstones */
+.gem{
+  position:absolute;
+  width:42px;
+  height:42px;
+  background:linear-gradient(145deg,#7bc7ff,#c7e7ff,#9cc9ff);
+  clip-path:polygon(50% 0%, 90% 35%, 72% 100%, 28% 100%, 10% 35%);
+  opacity:.55;
+  filter:blur(.2px);
+  animation: float 18s ease-in-out infinite;
+}
+
+.g1{ top:18%; left:22%; animation-delay:-2s; transform:scale(1.1); }
+.g2{ top:68%; left:28%; animation-delay:-6s; transform:scale(.85); }
+.g3{ top:34%; left:68%; animation-delay:-10s; transform:scale(1.2); }
+.g4{ top:78%; left:62%; animation-delay:-14s; transform:scale(.95); }
+
+@keyframes float{
+  0%{ transform:translateY(0) translateX(0) scale(1); }
+  50%{ transform:translateY(-28px) translateX(10px) scale(1.05); }
+  100%{ transform:translateY(0) translateX(0) scale(1); }
+}
+
+/* 🔐 content */
 .wrap{
   position:relative;
-  z-index:2;
+  z-index:3;
   text-align:center;
 }
 
@@ -41,8 +74,8 @@ h3{
 }
 
 input{
-  margin-top:8px;
-  background:#11141b;
+  margin-top:10px;
+  background:#0e1119;
   border:1px solid #2b3140;
   padding:10px 14px;
   border-radius:6px;
@@ -55,8 +88,8 @@ button{
   padding:10px 14px;
   background:#2b5cff;
   border:none;
-  color:white;
   border-radius:6px;
+  color:white;
   cursor:pointer;
 }
 
@@ -66,11 +99,11 @@ button{
   margin-top:8px;
 }
 
-/* hidden content */
+/* 🌘 deeper reveal */
 #deep{
-  margin-top:36px;
+  margin-top:38px;
   opacity:0;
-  transition:.6s;
+  transition:.7s;
 }
 
 .show{
@@ -78,17 +111,22 @@ button{
 }
 
 </style>
-
 </head>
+
 
 <body>
 
 <div class="bg"></div>
 
+<!-- gemstone layer -->
+<div class="gem g1"></div>
+<div class="gem g2"></div>
+<div class="gem g3"></div>
+<div class="gem g4"></div>
+
 <div class="wrap">
 
-  <h3>this place was meant to stay unseen.</h3>
-
+  <h3>not every door should be opened.</h3>
   <p>enter the second key</p>
 
   <input id="pw2" type="password" placeholder="password">
@@ -106,10 +144,9 @@ button{
 
 <script>
 
-const KEY2 = "silent";   // 👉 mật khẩu tầng 2 (đổi tuỳ bạn)
+const KEY2 = "silent";   // 👉 mật khẩu tầng 2 — đổi tại đây
 
 function unlock(){
-
   const v = pw2.value;
 
   if(v === KEY2){
@@ -121,6 +158,11 @@ function unlock(){
     deep.classList.remove("show");
   }
 }
+
+</script>
+
+</body>
+</html>
 
 </script>
 
