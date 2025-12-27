@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <title>veil</title>
@@ -17,77 +17,58 @@ body{
   align-items:center;
 }
 
-/* 🌌 nền trời sâu */
+/* 🌌 nền trời */
 .bg{
   position:absolute;
   inset:-40%;
   background:
     radial-gradient(circle at 30% 30%, #1a2240, transparent 45%),
     radial-gradient(circle at 70% 60%, #0b1328, transparent 50%);
-  filter:blur(80px);
-  animation: drift 45s linear infinite;
-  opacity:.7;
+  filter:blur(90px);
+  animation: drift 50s linear infinite;
+  opacity:.75;
 }
 @keyframes drift{
-  0%{transform:translate(-5%,-5%)}
-  50%{transform:translate(5%,5%)}
-  100%{transform:translate(-5%,-5%)}
+  0%{transform:translate(-6%,-6%)}
+  50%{transform:translate(6%,6%)}
+  100%{transform:translate(-6%,-6%)}
 }
 
-/* ================= CONSTELLATIONS ================= */
+/* ================= CONSTELLATION ================= */
 
 .constellation{
   position:absolute;
-  transition:1s;
 }
 
 .star{
   position:absolute;
-  width:10px;
-  height:10px;
+  width:8px;
+  height:8px;
   border-radius:50%;
-  background:#cfe6ff;
-  box-shadow:0 0 8px rgba(200,230,255,.9);
+  background:#d9ecff;
+  box-shadow:0 0 10px rgba(210,235,255,.9);
 }
 
-/* sao trung tâm */
-.star.core{
-  width:14px;
-  height:14px;
-  box-shadow:0 0 16px rgba(220,240,255,1);
+/* sao nổi bật */
+.star.bright{
+  width:13px;
+  height:13px;
+  box-shadow:0 0 22px rgba(235,248,255,1);
 }
 
-/* đường nối */
-.line{
+/* ripple cho mọi sao */
+.star.active::after{
+  content:"";
   position:absolute;
-  height:1px;
-  background:linear-gradient(to right,#bcd6ff,transparent);
-  opacity:.6;
-}
-
-/* chòm sao được kích hoạt */
-.active .star{
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse{
-  0%,100%{opacity:.6}
-  50%{opacity:1}
-}
-
-/* 🌊 ripple */
-.ripple{
-  position:absolute;
+  inset:0;
+  border-radius:50%;
   border:1px solid rgba(180,220,255,.6);
-  border-radius:50%;
-  width:10px;
-  height:10px;
-  animation:ripple 0.6s ease-out forwards;
+  animation:ripple 1.2s ease-out infinite;
 }
 
 @keyframes ripple{
-  from{transform:scale(1);opacity:.8}
-  to{transform:scale(10);opacity:0}
+  from{transform:scale(1);opacity:.7}
+  to{transform:scale(7);opacity:0}
 }
 
 /* ================= UI ================= */
@@ -121,7 +102,6 @@ button{
   color:#ff6b6b;
   margin-top:6px;
 }
-
 </style>
 </head>
 
@@ -130,29 +110,38 @@ button{
 <div class="bg"></div>
 
 <!-- ♐ SAGITTARIUS -->
-<div class="constellation" id="sag" style="top:32%;left:22%;">
-  <div class="star core" style="top:40px;left:80px;"></div>
-  <div class="star" style="top:20px;left:120px;"></div>
-  <div class="star" style="top:60px;left:140px;"></div>
-  <div class="star" style="top:100px;left:110px;"></div>
-  <div class="star" style="top:120px;left:60px;"></div>
-
-  <div class="line" style="top:45px;left:90px;width:40px;"></div>
-  <div class="line" style="top:70px;left:110px;width:35px;"></div>
-  <div class="line" style="top:105px;left:90px;width:30px;"></div>
+<div class="constellation" id="sag" style="top:30%;left:18%;">
+  <div class="star bright" style="top:60px; left:90px;"></div>
+  <div class="star" style="top:30px; left:130px;"></div>
+  <div class="star" style="top:80px; left:150px;"></div>
+  <div class="star" style="top:120px; left:120px;"></div>
+  <div class="star" style="top:140px; left:70px;"></div>
+  <div class="star" style="top:110px; left:30px;"></div>
+  <div class="star" style="top:70px; left:20px;"></div>
 </div>
 
 <!-- ♍ VIRGO -->
-<div class="constellation" id="vir" style="top:30%;left:60%;">
-  <div class="star core" style="top:60px;left:80px;"></div>
-  <div class="star" style="top:20px;left:60px;"></div>
-  <div class="star" style="top:40px;left:120px;"></div>
-  <div class="star" style="top:100px;left:140px;"></div>
-  <div class="star" style="top:140px;left:100px;"></div>
+<div class="constellation" id="vir" style="top:26%;left:52%;">
+  <div class="star" style="top:20px; left:40px;"></div>
+  <div class="star" style="top:40px; left:70px;"></div>
+  <div class="star" style="top:10px; left:110px;"></div>
+  <div class="star" style="top:-10px; left:150px;"></div>
 
-  <div class="line" style="top:50px;left:70px;width:50px;"></div>
-  <div class="line" style="top:80px;left:90px;width:60px;"></div>
-  <div class="line" style="top:120px;left:100px;width:45px;"></div>
+  <div class="star bright" style="top:60px; left:100px;"></div>
+
+  <div class="star" style="top:80px; left:140px;"></div>
+  <div class="star" style="top:60px; left:180px;"></div>
+  <div class="star" style="top:40px; left:220px;"></div>
+
+  <div class="star bright" style="top:110px; left:120px;"></div>
+  <div class="star" style="top:150px; left:100px;"></div>
+  <div class="star" style="top:190px; left:80px;"></div>
+  <div class="star" style="top:220px; left:60px;"></div>
+</div>
+
+<!-- ⭐ NORTH STAR -->
+<div class="constellation" id="north" style="top:12%;left:75%;">
+  <div class="star bright" style="top:0;left:0;"></div>
 </div>
 
 <!-- UI -->
@@ -164,40 +153,36 @@ button{
 </div>
 
 <script>
-
-/* ===== PASSWORD MAP ===== */
 const GATES = {
-  saggitarius: { el:"sag", url:"saggitarius.html" },
-  virgo:       { el:"vir", url:"virgo.html" }
+  saggitarius: "sag.html",
+  virgo: "virgo.html",
+  north: "north.html"
 };
 
 function unlock(){
   const key = pw.value.trim();
-  const gate = GATES[key];
+  const target = GATES[key];
 
-  if(!gate){
+  if(!target){
     wrong.style.display="block";
     return;
   }
 
   wrong.style.display="none";
-  const constellation = document.getElementById(gate.el);
-  constellation.classList.add("active");
 
-  // ripple tại sao trung tâm
-  const core = constellation.querySelector(".star.core");
-  const r = document.createElement("div");
-  r.className="ripple";
-  r.style.left = core.offsetLeft + "px";
-  r.style.top  = core.offsetTop + "px";
-  constellation.appendChild(r);
+  const map = {
+    saggitarius: "sag",
+    virgo: "vir",
+    north: "north"
+  };
 
-  // đợi 1s rồi chuyển trang
+  const stars = document.querySelectorAll(`#${map[key]} .star`);
+  stars.forEach(s => s.classList.add("active"));
+
   setTimeout(()=>{
-    window.location.href = gate.url;
+    window.location.href = target;
   },1000);
 }
-
 </script>
 
 </body>
