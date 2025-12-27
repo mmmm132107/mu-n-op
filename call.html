@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Memory</title>
+
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #0f0f0f;
+        font-family: "Georgia", serif;
+        color: #f5e6dc;
+    }
+
+    .container {
+        position: relative;
+        padding: 80px 120px;
+    }
+
+    /* My love story */
+    .title {
+        font-size: 36px;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .title:hover {
+        transform: scale(1.05);
+    }
+
+    /* Frame ô vuông */
+    .frame {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+    }
+
+    .square {
+        width: 14px;
+        height: 14px;
+        border: 1px solid #e6d2c4;
+        position: absolute;
+        pointer-events: auto;
+        transition: 0.3s;
+    }
+
+    .square:hover {
+        background: #c6b2a3;
+    }
+
+    /* Ô đặc biệt — góc trái dưới */
+    .secret {
+        background: #b39986;
+    }
+
+    /* Popup text */
+    .popup {
+        position: absolute;
+        bottom: -70px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        width: 520px;
+        font-size: 14px;
+        line-height: 1.5;
+        opacity: 0;
+        transition: 0.7s;
+        margin: auto;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="title" id="goCall">
+        My love story
+    </div>
+
+    <div class="popup" id="p
