@@ -17,6 +17,7 @@ body{
   flex-direction:column;
 }
 
+/* intro */
 #intro{
   font-size:20px;
   opacity:.95;
@@ -25,6 +26,7 @@ body{
 }
 .hide{ opacity:0; pointer-events:none; }
 
+/* stage */
 #stage{
   display:none;
   position:relative;
@@ -39,6 +41,7 @@ body{
   box-shadow:0 0 60px rgba(120,160,255,.25);
 }
 
+/* stars */
 .bgstar{
   position:absolute;
   width:3px;
@@ -48,6 +51,7 @@ body{
   opacity:.65;
 }
 
+/* pieces */
 .piece{
   position:absolute;
   font-size:44px;
@@ -61,6 +65,7 @@ body{
   text-shadow:0 0 10px rgba(120,140,180,.7);
 }
 
+/* status text */
 #status{
   margin-top:12px;
   opacity:0;
@@ -70,6 +75,7 @@ body{
 .success{ color:#a9ffbf; }
 .fail{ color:#ff8f8f; }
 
+/* dust canvas */
 #dust{
   position:absolute;
   inset:0;
@@ -122,7 +128,7 @@ const ctx = dust.getContext("2d");
 
 let progressed = false;
 
-/* ===== intro → show stage ===== */
+/* ===== intro → show scene ===== */
 setTimeout(()=>{
   intro.classList.add("hide");
   setTimeout(()=>{
@@ -188,35 +194,32 @@ window.addEventListener("mouseup", ()=>{
   dragging=false;
   wn.style.cursor="grab";
 
-  /* === kiểm tra “đặt cạnh vua” === */
+  /* === kiểm tra: phải “đứng cạnh vua TRẮNG” === */
 
   const k = wn.getBoundingClientRect();
-  const b = bk.getBoundingClientRect();
+  const w = wk.getBoundingClientRect();
 
   const kcX = k.left + k.width/2;
   const kcY = k.top  + k.height/2;
 
-  const bcX = b.left + b.width/2;
-  const bcY = b.top  + b.height/2;
+  const wcX = w.left + w.width/2;
+  const wcY = w.top  + w.height/2;
 
-  const dist = Math.hypot(kcX-bcX, kcY-bcY);
+  const dist = Math.hypot(kcX-wcX, kcY-wcY);
 
-  // khoảng cách ~ kề bên (có thể chỉnh)
-  const NEAR = 95;
+  const NEAR = 95; // bán kính cho phép
 
   if(dist > NEAR) return fail();
 
-  /* đúng vị trí → tiếp diễn */
-
-  // “đặt thẳng” con mã cạnh vua cho đẹp
+  /* đúng vị trí → “khóa” knight cạnh vua cho đẹp */
   move(wn, 40, 200, ()=>{
 
     progressed = true;
 
-    setTimeout(()=>{      // ♚ b8 → a8
+    setTimeout(()=>{          // ♚ b8 → a8
       move(bk,40,40,()=>{
 
-        setTimeout(()=>{  // ♗ e6 → d5
+        setTimeout(()=>{      // ♗ e6 → d5
           move(wb,300,280,()=>{
             succeed();
           });
@@ -273,7 +276,4 @@ function dustToSand(){
 
 </body>
 </html>
-
-
-
 
