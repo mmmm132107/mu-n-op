@@ -8,7 +8,7 @@
 body{
   margin:0;
   height:100vh;
-  background:radial-gradient(circle at 40% 20%, #0e1830, #02050b 70%);
+  background:radial-gradient(circle at 40% 20%, #0f1a33, #02050b 70%);
   color:#e8ecff;
   font-family:serif;
   display:flex;
@@ -17,67 +17,91 @@ body{
   flex-direction:column;
 }
 
-/* intro text */
+/* intro */
 #intro{
   font-size:20px;
   opacity:.95;
-  letter-spacing:.05em;
-  transition:.7s;
+  letter-spacing:.04em;
+  transition:.8s;
 }
 .hide{ opacity:0; pointer-events:none; }
 
-/* space stage */
-.stage{
+/* stage */
+#stage{
   display:none;
   position:relative;
   width:560px;
   height:560px;
   border-radius:18px;
-  box-shadow:0 0 60px rgba(120,160,255,.25);
+  overflow:hidden;
   background:
     radial-gradient(circle at 30% 25%, rgba(120,150,255,.18), transparent 40%),
     radial-gradient(circle at 70% 70%, rgba(80,120,255,.12), transparent 45%),
     #0c1426;
-  overflow:hidden;
+  box-shadow:0 0 60px rgba(120,160,255,.25);
 }
 
-/* faint star field */
-.star{
+/* background stars */
+.bgstar{
   position:absolute;
   width:3px;
   height:3px;
   border-radius:50%;
   background:#d8e6ff;
-  opacity:.6;
-}
-.star:nth-child(odd){
-  animation: drift 6s ease-in-out infinite;
-}
-@keyframes drift{
-  0%{ transform:translateY(0); }
-  50%{ transform:translateY(-6px); }
-  100%{ transform:translateY(0); }
+  opacity:.65;
 }
 
-/* chess pieces — glowing */
+/* pieces */
 .piece{
   position:absolute;
-  font-size:42px;
+  font-size:44px;
   color:#ffffff;
-  text-shadow:
-    0 0 10px rgba(200,230,255,.9),
-    0 0 20px rgba(160,200,255,.7);
-  cursor:pointer;
+  text-shadow:0 0 12px rgba(200,230,255,.9);
   user-select:none;
+  cursor:grab;
 }
-
-/* king black darker */
 .black{
   color:#d0d4e0;
   text-shadow:0 0 10px rgba(120,140,180,.7);
 }
 
-/* status text */
+/* valid square hint (A6) */
+#hintA6{
+  position:absolute;
+  top:200px;   /* A6 vị trí đúng */
+  left:40px;
+  width:80px;
+  height:80px;
+  border-radius:10px;
+  pointer-events:none;
+  box-shadow:0 0 0 2px rgba(180,210,255,.4);
+  background:radial-gradient(circle,
+    rgba(200,220,255,.25),
+    rgba(160,200,255,.05),
+    transparent 70%);
+  animation:pulse 2.6s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%{ box-shadow:0 0 0 2px rgba(180,210,255,.5); }
+  50%{ box-shadow:0 0 24px 8px rgba(190,220,255,.5); }
+  100%{ box-shadow:0 0 0 2px rgba(180,210,255,.5); }
+}
+
+/* glow when drag over A6 */
+#dropA6{
+  position:absolute;
+  top:200px;
+  left:40px;
+  width:80px;
+  height:80px;
+  border-radius:10px;
+}
+#dropA6.hover{
+  outline:2px solid rgba(220,240,255,.9);
+  box-shadow:0 0 24px rgba(200,230,255,.9);
+}
+
+/* status */
 #status{
   margin-top:12px;
   opacity:0;
@@ -87,12 +111,11 @@ body{
 .success{ color:#a9ffbf; }
 .fail{ color:#ff8f8f; }
 
-/* dust canvas */
+/* dust effect */
 #dust{
   position:absolute;
   inset:0;
   pointer-events:none;
-  z-index:0;
 }
 </style>
 </head>
@@ -101,44 +124,47 @@ body{
 
 <div id="intro">play the plot — play the horse</div>
 
-<div class="stage" id="stage">
+<div id="stage">
   <canvas id="dust"></canvas>
 
-  <!-- small background stars -->
-  <div class="star" style="top:12%;left:22%"></div>
-  <div class="star" style="top:26%;left:74%"></div>
-  <div class="star" style="top:48%;left:18%"></div>
-  <div class="star" style="top:68%;left:42%"></div>
-  <div class="star" style="top:72%;left:66%"></div>
-  <div class="star" style="top:34%;left:82%"></div>
+  <!-- background stars -->
+  <div class="bgstar" style="top:12%;left:20%"></div>
+  <div class="bgstar" style="top:28%;left:74%"></div>
+  <div class="bgstar" style="top:46%;left:32%"></div>
+  <div class="bgstar" style="top:64%;left:58%"></div>
+  <div class="bgstar" style="top:76%;left:68%"></div>
 
-  <!-- pieces (absolute positions instead of chess grid) -->
-
-  <!-- ♚ b8 -->
+  <!-- ♚ black king — b8 -->
   <div id="bk" class="piece black" style="top:40px; left:120px">♚</div>
 
-  <!-- ♔ b6 -->
+  <!-- ♔ white king — b6 -->
   <div id="wk" class="piece" style="top:200px; left:120px">♔</div>
 
-  <!-- ♗ e6 -->
+  <!-- ♗ bishop — e6 -->
   <div id="wb" class="piece" style="top:200px; left:360px">♗</div>
 
-  <!-- ♞ c5 (player piece) -->
+  <!-- ♞ knight — c5 (player piece — draggable) -->
   <div id="wn" class="piece" style="top:280px; left:220px">♞</div>
 
+  <!-- valid square hint -->
+  <div id="hintA6"></div>
+
+  <!-- drop target -->
+  <div id="dropA6"></div>
 </div>
 
 <div id="status"></div>
 
 <script>
-const intro  = document.getElementById("intro");
-const stage  = document.getElementById("stage");
+const intro = document.getElementById("intro");
+const stage = document.getElementById("stage");
 const statusBox = document.getElementById("status");
 
 const bk = document.getElementById("bk");
 const wk = document.getElementById("wk");
 const wb = document.getElementById("wb");
 const wn = document.getElementById("wn");
+const dropA6 = document.getElementById("dropA6");
 
 const dust = document.getElementById("dust");
 const ctx = dust.getContext("2d");
@@ -151,28 +177,28 @@ setTimeout(()=>{
   setTimeout(()=>{
     stage.style.display="block";
     resizeDust();
-  },600);
+  },700);
 },900);
 
 window.addEventListener("resize", resizeDust);
 function resizeDust(){
-  dust.width  = stage.clientWidth;
+  dust.width = stage.clientWidth;
   dust.height = stage.clientHeight;
 }
 
-/* ===== helper: animate piece movement ===== */
-function move(el, x, y, cb){
+/* ===== helper move tween ===== */
+function move(el,x,y,cb){
   el.style.transition="0.6s";
-  el.style.left = x+"px";
-  el.style.top  = y+"px";
-  setTimeout(()=> cb && cb(), 650);
+  el.style.left=x+"px";
+  el.style.top =y+"px";
+  setTimeout(()=>cb&&cb(),650);
 }
 
 /* ===== FAIL ===== */
 function fail(){
   statusBox.textContent="mission failed";
   statusBox.className="fail show";
-  setTimeout(()=>location.href="veil.html",1200);
+  setTimeout(()=>location.href="veil.html",1300);
 }
 
 /* ===== SUCCESS ===== */
@@ -182,24 +208,73 @@ function succeed(){
   setTimeout(()=>dustToSand(),500);
 }
 
-/* ===== CLICK KNIGHT (player move) ===== */
-wn.onclick = ()=>{
+/* ========= DRAG & DROP FOR KNIGHT ========= */
 
+let dragging=false, offsetX=0, offsetY=0;
+
+wn.addEventListener("mousedown", e=>{
   if(progressed) return;
+  dragging=true;
+  wn.style.cursor="grabbing";
 
-  // required move: c5 → a6
-  // we simulate it by moving to left‑top position
-  move(wn, 40, 200, ()=>{
+  const r = wn.getBoundingClientRect();
+  offsetX = e.clientX - r.left;
+  offsetY = e.clientY - r.top;
 
-    progressed = true;
+  e.stopPropagation();
+});
 
-    // black king → a8
-    setTimeout(()=>{
-      move(bk, 40, 40, ()=>{
+window.addEventListener("mousemove", e=>{
+  if(!dragging) return;
 
-        // bishop → d5
-        setTimeout(()=>{
-          move(wb, 300, 280, ()=>{
+  const s = stage.getBoundingClientRect();
+
+  const x = e.clientX - s.left - offsetX;
+  const y = e.clientY - s.top  - offsetY;
+
+  wn.style.left = x+"px";
+  wn.style.top  = y+"px";
+
+  const d = dropA6.getBoundingClientRect();
+  const k = wn.getBoundingClientRect();
+
+  const over =
+    k.right  > d.left &&
+    k.left   < d.right &&
+    k.bottom > d.top &&
+    k.top    < d.bottom;
+
+  dropA6.classList.toggle("hover", over);
+});
+
+window.addEventListener("mouseup", ()=>{
+  if(!dragging) return;
+  dragging=false;
+  wn.style.cursor="grab";
+
+  const d = dropA6.getBoundingClientRect();
+  const k = wn.getBoundingClientRect();
+
+  const over =
+    k.right  > d.left &&
+    k.left   < d.right &&
+    k.bottom > d.top &&
+    k.top    < d.bottom;
+
+  dropA6.classList.remove("hover");
+
+  if(!over) return fail();     // thả sai → thất bại
+
+  /* đúng A6 → tiếp diễn cốt truyện */
+
+  move(wn,40,200,()=>{        // cố định vị trí chuẩn A6
+    progressed=true;
+
+    setTimeout(()=>{          // ♚ b8 → a8
+      move(bk,40,40,()=>{
+
+        setTimeout(()=>{      // ♗ e6 → d5
+          move(wb,300,280,()=>{
             succeed();
           });
         },450);
@@ -208,36 +283,31 @@ wn.onclick = ()=>{
     },450);
 
   });
-};
+});
 
-/* ====== sand dissolve ====== */
+/* ========= sand dissolve ========= */
 function dustToSand(){
 
-  const pcs = [bk,wk,wb,wn];
+  const pieces=[bk,wk,wb,wn];
   const particles=[];
+  const s = stage.getBoundingClientRect();
 
-  pcs.forEach(el=>{
+  pieces.forEach(el=>{
     const r = el.getBoundingClientRect();
-    const s = stage.getBoundingClientRect();
 
-    const x0 = r.left - s.left;
-    const y0 = r.top  - s.top;
-
-    for(let i=0;i<40;i++){
+    for(let i=0;i<42;i++){
       particles.push({
-        x:x0+Math.random()*r.width,
-        y:y0+Math.random()*r.height,
+        x:r.left-s.left + Math.random()*r.width,
+        y:r.top -s.top  + Math.random()*r.height,
         vx:(Math.random()-.5)*1.6,
         vy:-Math.random()*1.8,
         life:1
       });
     }
-
     el.style.opacity=0;
   });
 
   let t=0;
-
   (function anim(){
     ctx.clearRect(0,0,dust.width,dust.height);
 
@@ -260,3 +330,4 @@ function dustToSand(){
 
 </body>
 </html>
+
