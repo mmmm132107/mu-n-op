@@ -21,7 +21,8 @@ body{
 #intro{
   font-size:20px;
   opacity:.95;
-@@ -25,6 +26,7 @@
+  letter-spacing:.04em;
+  transition:.8s;
 }
 .hide{ opacity:0; pointer-events:none; }
 
@@ -29,7 +30,14 @@ body{
 #stage{
   display:none;
   position:relative;
-@@ -39,6 +41,7 @@
+  width:560px;
+  height:560px;
+  border-radius:18px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(120,150,255,.18), transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(80,120,255,.12), transparent 45%),
+    #0c1426;
   box-shadow:0 0 60px rgba(120,160,255,.25);
 }
 
@@ -37,7 +45,9 @@ body{
 .bgstar{
   position:absolute;
   width:3px;
-@@ -48,6 +51,7 @@
+  height:3px;
+  border-radius:50%;
+  background:#d8e6ff;
   opacity:.65;
 }
 
@@ -45,7 +55,13 @@ body{
 .piece{
   position:absolute;
   font-size:44px;
-@@ -61,6 +65,7 @@
+  color:#ffffff;
+  text-shadow:0 0 12px rgba(200,230,255,.9);
+  user-select:none;
+  cursor:grab;
+}
+.black{
+  color:#d0d4e0;
   text-shadow:0 0 10px rgba(120,140,180,.7);
 }
 
@@ -53,7 +69,9 @@ body{
 #status{
   margin-top:12px;
   opacity:0;
-@@ -70,6 +75,7 @@
+  transition:.7s;
+}
+#status.show{ opacity:1; }
 .success{ color:#a9ffbf; }
 .fail{ color:#ff8f8f; }
 
@@ -61,66 +79,202 @@ body{
 #dust{
   position:absolute;
   inset:0;
-@@ -122,7 +128,7 @@
+  pointer-events:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="intro">play the plot — play the horse</div>
+
+<div id="stage">
+  <canvas id="dust"></canvas>
+
+  <!-- background stars -->
+  <div class="bgstar" style="top:12%;left:20%"></div>
+  <div class="bgstar" style="top:28%;left:74%"></div>
+  <div class="bgstar" style="top:46%;left:32%"></div>
+  <div class="bgstar" style="top:64%;left:58%"></div>
+  <div class="bgstar" style="top:76%;left:68%"></div>
+
+  <!-- ♚ black king — b8 -->
+  <div id="bk" class="piece black" style="top:40px; left:120px">♚</div>
+
+  <!-- ♔ white king — b6 -->
+  <div id="wk" class="piece" style="top:200px; left:120px">♔</div>
+
+  <!-- ♗ bishop — e6 -->
+  <div id="wb" class="piece" style="top:200px; left:360px">♗</div>
+
+  <!-- ♞ knight — c5 (player) -->
+  <div id="wn" class="piece" style="top:280px; left:220px">♞</div>
+</div>
+
+<div id="status"></div>
+
+<script>
+const intro = document.getElementById("intro");
+const stage = document.getElementById("stage");
+const statusBox = document.getElementById("status");
+
+const bk = document.getElementById("bk");
+const wk = document.getElementById("wk");
+const wb = document.getElementById("wb");
+const wn = document.getElementById("wn");
+
+const dust = document.getElementById("dust");
+const ctx = dust.getContext("2d");
 
 let progressed = false;
 
-/* ===== intro → show stage ===== */
 /* ===== intro → show scene ===== */
 setTimeout(()=>{
   intro.classList.add("hide");
   setTimeout(()=>{
-@@ -188,35 +194,32 @@
+    stage.style.display="block";
+    resizeDust();
+  },700);
+},900);
+
+window.addEventListener("resize", resizeDust);
+function resizeDust(){
+  dust.width = stage.clientWidth;
+  dust.height = stage.clientHeight;
+}
+
+/* ===== tween move ===== */
+function move(el,x,y,cb){
+  el.style.transition="0.6s";
+  el.style.left=x+"px";
+  el.style.top =y+"px";
+  setTimeout(()=>cb&&cb(),650);
+}
+
+/* ===== FAIL ===== */
+function fail(){
+  statusBox.textContent="mission failed";
+  statusBox.className="fail show";
+  setTimeout(()=>location.href="veil.html",1300);
+}
+
+/* ===== SUCCESS ===== */
+function succeed(){
+  statusBox.textContent="The king is captured";
+  statusBox.className="success show";
+  setTimeout(()=>dustToSand(),500);
+}
+
+/* ========= DRAG KNIGHT ========= */
+
+let dragging=false, offsetX=0, offsetY=0;
+
+wn.addEventListener("mousedown", e=>{
+  if(progressed) return;
+  dragging=true;
+  wn.style.cursor="grabbing";
+
+  const r = wn.getBoundingClientRect();
+  offsetX = e.clientX - r.left;
+  offsetY = e.clientY - r.top;
+
+  e.stopPropagation();
+});
+
+window.addEventListener("mousemove", e=>{
+  if(!dragging) return;
+
+  const s = stage.getBoundingClientRect();
+  wn.style.left = (e.clientX - s.left - offsetX)+"px";
+  wn.style.top  = (e.clientY - s.top  - offsetY)+"px";
+});
+
+window.addEventListener("mouseup", ()=>{
+  if(!dragging) return;
   dragging=false;
   wn.style.cursor="grab";
 
-  /* === kiểm tra “đặt cạnh vua” === */
   /* === kiểm tra: phải “đứng cạnh vua TRẮNG” === */
 
   const k = wn.getBoundingClientRect();
-  const b = bk.getBoundingClientRect();
   const w = wk.getBoundingClientRect();
 
   const kcX = k.left + k.width/2;
   const kcY = k.top  + k.height/2;
 
-  const bcX = b.left + b.width/2;
-  const bcY = b.top  + b.height/2;
   const wcX = w.left + w.width/2;
   const wcY = w.top  + w.height/2;
 
-  const dist = Math.hypot(kcX-bcX, kcY-bcY);
   const dist = Math.hypot(kcX-wcX, kcY-wcY);
 
-  // khoảng cách ~ kề bên (có thể chỉnh)
-  const NEAR = 95;
   const NEAR = 95; // bán kính cho phép
 
   if(dist > NEAR) return fail();
 
-  /* đúng vị trí → tiếp diễn */
-
-  // “đặt thẳng” con mã cạnh vua cho đẹp
   /* đúng vị trí → “khóa” knight cạnh vua cho đẹp */
   move(wn, 40, 200, ()=>{
 
     progressed = true;
 
-    setTimeout(()=>{      // ♚ b8 → a8
     setTimeout(()=>{          // ♚ b8 → a8
       move(bk,40,40,()=>{
 
-        setTimeout(()=>{  // ♗ e6 → d5
         setTimeout(()=>{      // ♗ e6 → d5
           move(wb,300,280,()=>{
             succeed();
           });
-@@ -274,6 +277,3 @@
-</body>
-</html>
+        },450);
 
+      });
+    },450);
+
+  });
+});
+
+/* ========= sand dissolve ========= */
+function dustToSand(){
+
+  const pieces=[bk,wk,wb,wn];
+  const particles=[];
+  const s = stage.getBoundingClientRect();
+
+  pieces.forEach(el=>{
+    const r = el.getBoundingClientRect();
+
+    for(let i=0;i<42;i++){
+      particles.push({
+        x:r.left-s.left + Math.random()*r.width,
+        y:r.top -s.top  + Math.random()*r.height,
+        vx:(Math.random()-.5)*1.6,
+        vy:-Math.random()*1.8,
+        life:1
+      });
+    }
+    el.style.opacity=0;
+  });
+
+  let t=0;
+  (function anim(){
+    ctx.clearRect(0,0,dust.width,dust.height);
+
+    particles.forEach(p=>{
+      p.x+=p.vx;
+      p.y+=p.vy;
+      p.vy+=0.02;
+      p.life-=0.01;
+
+      ctx.fillStyle=`rgba(210,225,255,${p.life})`;
+      ctx.fillRect(p.x,p.y,2,2);
+    });
+
+    t++;
+    if(t<140) requestAnimationFrame(anim);
+    else location.href="memory.html";
+  })();
+}
 </script>
 
 </body>
 </html>
+
 
