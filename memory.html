@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Memory</title>
 
+<!-- poetic font for rendezvous -->
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<!-- body font -->
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
@@ -23,23 +27,28 @@ body{
     linear-gradient(#06080c,#05060a,#090911);
 }
 
-/* title */
+/* title screen */
 .center{
   height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
 }
+
+/* ✨ poetic rendezvous font */
 .title{
-  font-size:42px;
-  letter-spacing:1.4px;
+  font-family:"Lora", serif;
+  font-size:48px;
+  font-style:italic;
+  letter-spacing:1.6px;
   cursor:pointer;
-  transition:.35s;
-  text-shadow:0 0 30px rgba(220,230,255,.25);
+  transition:.4s;
+  text-shadow:0 0 34px rgba(230,240,255,.28);
 }
+
 .title:hover{
-  transform:scale(1.06);
-  text-shadow:0 0 36px rgba(230,240,255,.6);
+  transform:scale(1.08);
+  text-shadow:0 0 42px rgba(240,245,255,.6);
 }
 
 /* frame */
@@ -49,7 +58,7 @@ body{
   position:absolute;
 }
 
-/* fade */
+/* fade layer */
 .fade{
   position:fixed;
   inset:0;
@@ -60,13 +69,14 @@ body{
 }
 .fade.show{opacity:1}
 
-/* story */
+/* text section */
 .story{
   max-width:880px;
-  margin:120px auto 300px;
+  margin:120px auto 340px;
   padding:0 28px;
   font-size:17px;
   line-height:1.8;
+  letter-spacing:.2px;
   opacity:0;
   transform:translateY(20px);
   transition:.7s;
@@ -76,10 +86,10 @@ body{
   transform:translateY(0);
 }
 
-/* ➜ stay button — góc phải nhưng KHÔNG cố định */
+/* stay button — placed LOW right → must scroll */
 .choice-wrapper{
   max-width:980px;
-  margin:160px auto 250px;
+  margin:200px auto 260px;
   padding:0 28px;
 }
 
@@ -130,10 +140,12 @@ const story = document.getElementById("story");
 const arrow = document.getElementById("arrow");
 const goCall = document.getElementById("goCall");
 
-/* click title → rendezvous */
+let autoRedirect;
+
+/* click rendezvous → page */
 goCall.onclick = () => window.location.href = "rendezvous.html";
 
-/* text */
+/* memory text */
 const text =
 "Con ngựa ấy ở lại bãi cỏ vì ngũ cốc và mái chuồng quen thuộc. "+
 "Nó nhiều lần tự nhủ rằng rồi sẽ rời đi và chạy đến một dải thảo nguyên xanh ngắt. "+
@@ -141,8 +153,8 @@ const text =
 "Phía trước là tự do, còn phía sau là người đã buộc sợi dây bằng cả quan tâm lẫn sự tiện lợi. "+
 "Và thế là nó quay đầu. Nó đã lỡ yêu nơi ấy quá nhiều để rời đi.";
 
-/* typewriter — có callback */
-function typewriter(el, str, speed=24, done){
+/* typewriter with on-finish callback */
+function typewriter(el, str, speed=22, done){
   el.innerHTML="";
   let i=0;
   (function step(){
@@ -155,9 +167,7 @@ function typewriter(el, str, speed=24, done){
   })();
 }
 
-let autoRedirect;
-
-/* frame + secret bottom-left */
+/* build frame + secret square bottom-left */
 function createFrame(){
   const gap=32;
   const rows=Math.floor(window.innerHeight/gap);
@@ -169,7 +179,7 @@ function createFrame(){
   for(let r=0;r<=rows;r++){
     for(let c=0;c<=cols;c++){
 
-      const edge=r===0||r===rows||c===0||c===cols;
+      const edge = r===0 || r===rows || c===0 || c===cols;
       if(!edge) continue;
 
       const s=document.createElement("div");
@@ -186,7 +196,7 @@ function createFrame(){
 }
 createFrame();
 
-/* click secret square */
+/* secret square trigger */
 function triggerSecret(){
 
   fade.classList.add("show");
@@ -200,26 +210,25 @@ function triggerSecret(){
 
       story.classList.add("show");
 
-      /* chạy text */
+      /* run text */
       typewriter(story, text, 20, () => {
 
-        /* ✓ chỉ khi text gõ XONG → mới xuất hiện stay */
+        /* ✓ only if text FINISHES → reveal stay */
         arrow.classList.add("show");
-        /* mũi tên ở KHỐI BÊN DƯỚI → phải scroll mới thấy */
-
+        /* positioned low → user must scroll to see */
       });
 
-      /* ⚠ auto chuyển khi text CHƯA gõ xong */
+      /* ⚠ redirect BEFORE text finishes */
       autoRedirect = setTimeout(()=>{
         window.location.href = "Thecall.html";
-      }, 3500);   // chỉnh thời gian tùy cảm giác
+      }, 3300);
 
-    }, 400);
+    }, 420);
 
   }, 900);
 }
 
-/* nếu người dùng kịp kéo xuống & chọn stay */
+/* user chooses stay */
 arrow.onclick = ()=>{
   clearTimeout(autoRedirect);
   window.location.href = "stay.html";
