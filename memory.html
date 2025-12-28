@@ -16,14 +16,12 @@ body{
   overflow-x:hidden;
   scroll-behavior:smooth;
 
-
   background:
     radial-gradient(1200px 600px at 20% -10%, rgba(150,180,255,.15), transparent),
     radial-gradient(900px 700px at 90% 20%, rgba(255,160,200,.12), transparent),
     radial-gradient(800px 900px at 40% 120%, rgba(180,220,255,.12), transparent),
     linear-gradient(#06080c,#05060a,#090911);
 }
-
 
 .nebula{
   position:fixed;
@@ -37,24 +35,22 @@ body{
   animation:drift 28s ease-in-out infinite;
 }
 @keyframes drift{
-  0%{ transform:translate(-12px,-8px) scale(1); }
-  50%{ transform:translate(14px,10px) scale(1.04); }
-  100%{ transform:translate(-12px,-8px) scale(1); }
+  0%{transform:translate(-12px,-8px) scale(1);}
+  50%{transform:translate(14px,10px) scale(1.04);}
+  100%{transform:translate(-12px,-8px) scale(1);}
 }
-
 
 .star{
   position:fixed;
-  width:3px;
-  height:3px;
+  width:3px;height:3px;
   border-radius:50%;
-  background:#ffffff;
+  background:#fff;
   opacity:.7;
   animation:twinkle 6s ease-in-out infinite;
 }
 @keyframes twinkle{
-  0%,100%{ opacity:.4; transform:scale(.9); }
-  50%{ opacity:1; transform:scale(1.4); }
+  0%,100%{opacity:.4;transform:scale(.9);}
+  50%{opacity:1;transform:scale(1.4);}
 }
 
 /* màn hình đầu */
@@ -76,17 +72,14 @@ body{
   text-shadow:0 0 36px rgba(230,240,255,.6);
 }
 
-/* 🔲 frame */
+/* frame */
 .square{
-  width:16px;
-  height:16px;
+  width:16px;height:16px;
   border:1px solid rgba(230,215,200,.55);
   position:absolute;
   transition:.25s;
 }
-.square:hover{
-  background:rgba(230,215,200,.35);
-}
+.square:hover{background:rgba(230,215,200,.35);}
 
 /* noise */
 .noise{
@@ -109,9 +102,10 @@ body{
 }
 .fade.show{opacity:1}
 
+/* text memory */
 .story{
   max-width:880px;
-  margin:120px auto 180px;
+  margin:120px auto 150px;
   padding:0 28px;
   font-size:17px;
   line-height:1.8;
@@ -120,10 +114,19 @@ body{
   transform:translateY(20px);
   transition:.7s ease;
 }
-.story.show{
-  opacity:1;
-  transform:translateY(0);
+.story.show{opacity:1;transform:translateY(0)}
+
+/* nút lựa chọn */
+.choice-arrow{
+  margin-top:22px;
+  font-size:22px;
+  display:inline-block;
+  opacity:0;
+  cursor:pointer;
+  transition:.35s;
 }
+.choice-arrow.show{opacity:1;}
+.choice-arrow:hover{transform:translateX(4px);}
 </style>
 </head>
 
@@ -133,7 +136,6 @@ body{
 <div class="noise"></div>
 <div class="fade" id="fade"></div>
 
-<!-- ⭐ random floating lights -->
 <script>
 for(let i=0;i<22;i++){
   const s=document.createElement("div");
@@ -146,18 +148,20 @@ for(let i=0;i<22;i++){
 </script>
 
 <section class="center">
-  <div class="title" id="goCall">My love story</div>
+  <div class="title" id="goCall">rendezvous</div>
 </section>
 
 <section id="story" class="story"></section>
+<div id="arrow" class="choice-arrow">➜ stay</div>
 
 <script>
 const fade = document.getElementById("fade");
 const storyBox = document.getElementById("story");
 const goCall = document.getElementById("goCall");
+const arrow = document.getElementById("arrow");
 
-/* 👉 click → sang echoe.html */
-goCall.onclick = () => window.location.href = "echoe.html";
+/* click title → rendezvous.html */
+goCall.onclick = () => window.location.href = "rendezvous.html";
 
 /* nội dung */
 const text =
@@ -168,7 +172,7 @@ const text =
 "Và thế là nó quay đầu. Nó đã lỡ yêu nơi ấy quá nhiều để rời đi.";
 
 /* typewriter */
-function typewriter(el, str, speed=30){
+function typewriter(el, str, speed=26){
   el.innerHTML="";
   let i=0;
   (function step(){
@@ -179,24 +183,25 @@ function typewriter(el, str, speed=30){
   })();
 }
 
-/* tạo frame + ô bí mật */
-function createFrame(){
-  const gap = 32;
-  const rows = Math.floor(window.innerHeight/gap);
-  const cols = Math.floor(window.innerWidth/gap);
+let autoRedirect;
 
-  const secretR = rows;
-  const secretC = 0;
+/* tạo frame + ô bí mật ở góc trái dưới */
+function createFrame(){
+  const gap=32;
+  const rows=Math.floor(window.innerHeight/gap);
+  const cols=Math.floor(window.innerWidth/gap);
+
+  const secretR=rows, secretC=0;
 
   for(let r=0;r<=rows;r++){
     for(let c=0;c<=cols;c++){
-      const edge = r===0||r===rows||c===0||c===cols;
+      const edge=r===0||r===rows||c===0||c===cols;
       if(!edge) continue;
 
-      const s = document.createElement("div");
+      const s=document.createElement("div");
       s.className="square";
-      s.style.top = r*gap+"px";
-      s.style.left = c*gap+"px";
+      s.style.top=r*gap+"px";
+      s.style.left=c*gap+"px";
 
       if(r===secretR && c===secretC)
         s.addEventListener("click", triggerSecret);
@@ -207,8 +212,9 @@ function createFrame(){
 }
 createFrame();
 
-/* hiệu ứng bí mật */
+/* click ô bí mật */
 function triggerSecret(){
+
   fade.classList.add("show");
 
   setTimeout(()=>{
@@ -217,15 +223,28 @@ function triggerSecret(){
 
     setTimeout(()=>{
       storyBox.classList.add("show");
-      typewriter(storyBox,text,26);
-    },450);
+      typewriter(storyBox,text,24);
 
-    setTimeout(()=>{
-      window.location.href="echoe.html";
-    },6000);
+      /* hiện mũi tên lựa chọn */
+      setTimeout(()=>{
+        arrow.classList.add("show");
+      },900);
+
+      /* nếu không bấm mũi tên → sang Thecall.html */
+      autoRedirect = setTimeout(()=>{
+        window.location.href="Thecall.html";
+      },6000);
+
+    },450);
 
   },900);
 }
+
+/* nếu người dùng chọn stay → hủy auto redirect */
+arrow.onclick = ()=>{
+  clearTimeout(autoRedirect);
+  window.location.href="stay.html";
+};
 </script>
 
 </body>
