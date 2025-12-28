@@ -33,11 +33,21 @@ button:hover{transform:scale(1.02);}
   margin-top:14px;
   padding:10px 12px;
   border-radius:10px;
-  background:#111217;
-  min-height:44px;
+  background:#101219;
+  min-height:54px;
   font-size:14px;
   line-height:1.6;
   white-space:pre-line;
+}
+
+.live{
+  margin-top:16px;
+  padding:12px;
+  border-radius:10px;
+  background:#0a0b12;
+  font-family:monospace;
+  font-size:14px;
+  min-height:90px;
 }
 
 .log{
@@ -47,7 +57,7 @@ button:hover{transform:scale(1.02);}
   background:#0c0d13;
   font-family:monospace;
   font-size:13px;
-  max-height:220px;
+  max-height:260px;
   overflow-y:auto;
 }
 </style>
@@ -57,11 +67,13 @@ button:hover{transform:scale(1.02);}
 
 <div class="wrap">
 
-<h2>Kiểm tra web có nhận giọng nói hay không</h2>
+<h2>Kiểm tra hệ thống có nhận giọng nói hay không</h2>
 
-<button id="listenBtn">Bấm để nói</button>
+<button id="listenBtn">Bắt đầu nghe</button>
 
 <div id="status"></div>
+
+<div class="live" id="liveBox">Đang chờ tín hiệu…</div>
 
 <div class="log" id="logBox"></div>
 
@@ -69,7 +81,8 @@ button:hover{transform:scale(1.02);}
 
 <script>
 const statusBox = document.getElementById("status");
-const logBox = document.getElementById("logBox");
+const liveBox   = document.getElementById("liveBox");
+const logBox    = document.getElementById("logBox");
 const listenBtn = document.getElementById("listenBtn");
 
 function log(msg){
@@ -78,7 +91,7 @@ function log(msg){
   logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* ========== KHỞI TẠO SPEECH API ========== */
+/* ====== KHỞI TẠO SPEECH API ====== */
 
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -86,32 +99,41 @@ const SpeechRecognition =
 if(!SpeechRecognition){
   statusBox.textContent =
     "⚠ Trình duyệt không hỗ trợ SpeechRecognition.\n" +
-    "Hãy thử bằng Chrome hoặc Edge.";
-  log("SpeechRecognition NOT supported");
-} else {
-  log("SpeechRecognition supported ✓");
+    "Hãy dùng Chrome hoặc Edge.";
+  log("SpeechRecognition NOT SUPPORTED");
 }
 
 const rec = new SpeechRecognition();
-rec.lang = "vi-VN";
-rec.interimResults = false;
 
-/* ========== EVENT DEBUG ========== */
+/* cấu hình để hạn chế lỗi NO-SPEECH */
+rec.lang = "en-US";          // ổn định nhất để test
+rec.interimResults = true;   // nhận kết quả tạm thời
+rec.continuous = true;       // không tự dừng sớm
+rec.maxAlternatives = 1;
+
+let buffer = "";
+
+/* ====== EVENT DEBUG ====== */
 
 rec.onstart = () => {
-  statusBox.textContent = "🎤 Đã bắt đầu nghe… hãy nói vào mic";
+  statusBox.textContent = "🎤 Đang nghe — hãy nói rõ 2–3 giây";
   log("onstart ✓ recognition started");
 };
 
 rec.onaudiostart = () => log("onaudiostart ✓ mic nhận âm thanh");
+rec.onsoundstart = () => log("onsoundstart ✓ có tín hiệu âm thanh");
 rec.onspeechstart = () => log("onspeechstart ✓ phát hiện giọng nói");
-rec.onspeechend = () => log("onspeechend — ngừng nói");
-rec.onaudioend = () => log("onaudioend — kết thúc audio");
-rec.onend = () => log("onend — recognition session ended");
+rec.onspeechend = () => log("onspeechend — tạm dừng câu nói");
+rec.onaudioend = () => log("onaudioend — kết thúc chunk audio");
+
+rec.onend = () => {
+  log("onend — phiên nghe kết thúc (tự khởi động lại)");
+  rec.start(); // giữ phiên nghe hoạt động liên tục
+};
 
 rec.onnomatch = () => {
-  statusBox.textContent = "❓ Không nghe rõ hoặc không hiểu câu nói";
-  log("onnomatch — no speech recognized");
+  statusBox.textContent = "❓ Không hiểu câu nói";
+  log("onnomatch — no match");
 };
 
 rec.onerror = (e) => {
@@ -119,25 +141,30 @@ rec.onerror = (e) => {
   log("ERROR → " + e.error);
 };
 
-/* ========== KHI NHẬN ĐƯỢC KẾT QUẢ ========== */
+/* ====== NHẬN TEXT REALTIME ====== */
 
 rec.onresult = (e) => {
 
-  const spoken = e.results[0][0].transcript.trim();
-  const conf = e.results[0][0].confidence;
+  const idx = e.resultIndex;
+  const spoken = e.results[idx][0].transcript;
+
+  buffer += " " + spoken;
+
+  liveBox.textContent =
+    "Giọng nói đang nhận được (live):\n" + buffer.trim();
 
   statusBox.textContent =
-    "Web nghe được:\n" +
-    `"${spoken}"\n` +
-    `(độ tin cậy: ${(conf*100).toFixed(1)}%)`;
+    "✓ Web đã nhận được giọng nói";
 
-  log(`RESULT = "${spoken}"`);
+  log(`RESULT: "${spoken}"`);
 };
 
-/* ========== NÚT BẮT ĐẦU NGHE ========== */
+/* ====== NÚT BẮT ĐẦU ====== */
 
 listenBtn.onclick = () => {
   log("\n\n=== CLICK: START LISTENING ===");
+  buffer = "";
+  liveBox.textContent = "Đang nghe… nói thử: “hello test one two”";
   statusBox.textContent = "⏳ Đang khởi động microphone…";
   rec.start();
 };
