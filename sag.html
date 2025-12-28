@@ -1,277 +1,187 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="utf-8" />
-<title>sagittarius</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Memory</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
 body{
   margin:0;
+  min-height:200vh;
+  font-family:"Be Vietnam Pro",system-ui,sans-serif;
+  color:#f2e8dc;
+  overflow-x:hidden;
+  scroll-behavior:smooth;
+
+  background:
+    radial-gradient(1100px 600px at 12% -6%, rgba(150,180,255,.18), transparent),
+    radial-gradient(900px 720px at 90% 12%, rgba(255,160,200,.14), transparent),
+    linear-gradient(#05070b,#06070b,#090911);
+}
+
+.nebula{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(900px 600px at 30% 40%, rgba(110,150,255,.18), transparent 70%),
+    radial-gradient(700px 500px at 70% 70%, rgba(255,180,220,.12), transparent 70%);
+  filter:blur(10px);
+  opacity:.55;
+  animation:drift 28s ease-in-out infinite;
+}
+@keyframes drift{
+  0%{ transform:translate(-12px,-8px) scale(1); }
+  50%{ transform:translate(14px,10px) scale(1.04); }
+  100%{ transform:translate(-12px,-8px) scale(1); }
+}
+
+.center{
   height:100vh;
-  background:radial-gradient(circle at 40% 20%, #0f1a33, #02050b 70%);
-  color:#e8ecff;
-  font-family:serif;
   display:flex;
   justify-content:center;
   align-items:center;
-  flex-direction:column;
 }
+.title{
+  font-size:42px;
+  letter-spacing:1.4px;
+  cursor:pointer;
+  transition:.35s;
+  text-shadow:0 0 30px rgba(220,230,255,.25);
+}
+.title:hover{ transform:scale(1.06); }
 
-/* intro */
-#intro{
-  font-size:20px;
-  opacity:.95;
-  letter-spacing:.04em;
-  transition:.8s;
-}
-.hide{ opacity:0; pointer-events:none; }
-
-/* stage */
-#stage{
-  display:none;
-  position:relative;
-  width:560px;
-  height:560px;
-  border-radius:18px;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 30% 25%, rgba(120,150,255,.18), transparent 40%),
-    radial-gradient(circle at 70% 70%, rgba(80,120,255,.12), transparent 45%),
-    #0c1426;
-  box-shadow:0 0 60px rgba(120,160,255,.25);
-}
-
-/* stars */
-.bgstar{
-  position:absolute;
-  width:3px;
-  height:3px;
-  border-radius:50%;
-  background:#d8e6ff;
-  opacity:.65;
-}
-
-/* pieces */
-.piece{
-  position:absolute;
-  font-size:44px;
-  color:#ffffff;
-  text-shadow:0 0 12px rgba(200,230,255,.9);
-  user-select:none;
-  cursor:grab;
-}
-.black{
-  color:#d0d4e0;
-  text-shadow:0 0 10px rgba(120,140,180,.7);
-}
-
-/* status text */
-#status{
-  margin-top:12px;
+.story{
+  max-width:880px;
+  margin:120px auto 180px;
+  padding:0 28px;
+  font-size:17px;
+  line-height:1.8;
+  letter-spacing:.2px;
   opacity:0;
-  transition:.7s;
+  transform:translateY(20px);
+  transition:.7s ease;
 }
-#status.show{ opacity:1; }
-.success{ color:#a9ffbf; }
-.fail{ color:#ff8f8f; }
+.story.show{
+  opacity:1;
+  transform:translateY(0);
+}
 
-/* dust canvas */
-#dust{
-  position:absolute;
-  inset:0;
+/* mũi tên NEXT */
+.next{
+  position:fixed;
+  right:26px;
+  bottom:26px;
+  font-size:22px;
+  padding:10px 14px;
+  border-radius:50%;
+  border:1px solid rgba(230,220,210,.7);
+  cursor:pointer;
+  opacity:0;
   pointer-events:none;
+  transition:.35s;
+}
+.next.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.next:hover{
+  background:rgba(240,230,220,.2);
 }
 </style>
 </head>
 
 <body>
 
-<div id="intro">play the plot — play the horse</div>
+<div class="nebula"></div>
 
-<div id="stage">
-  <canvas id="dust"></canvas>
+<section class="center">
+  <div class="title" id="openStory">My love story</div>
+</section>
 
-  <!-- background stars -->
-  <div class="bgstar" style="top:12%;left:20%"></div>
-  <div class="bgstar" style="top:28%;left:74%"></div>
-  <div class="bgstar" style="top:46%;left:32%"></div>
-  <div class="bgstar" style="top:64%;left:58%"></div>
-  <div class="bgstar" style="top:76%;left:68%"></div>
+<section id="story" class="story"></section>
 
-  <!-- ♚ black king — b8 -->
-  <div id="bk" class="piece black" style="top:40px; left:120px">♚</div>
-
-  <!-- ♔ white king — b6 -->
-  <div id="wk" class="piece" style="top:200px; left:120px">♔</div>
-
-  <!-- ♗ bishop — e6 -->
-  <div id="wb" class="piece" style="top:200px; left:360px">♗</div>
-
-  <!-- ♞ knight — c5 (player) -->
-  <div id="wn" class="piece" style="top:280px; left:220px">♞</div>
-</div>
-
-<div id="status"></div>
+<div id="nextBtn" class="next">➜</div>
 
 <script>
-const intro = document.getElementById("intro");
-const stage = document.getElementById("stage");
-const statusBox = document.getElementById("status");
+const storyBox = document.getElementById("story");
+const openStory = document.getElementById("openStory");
+const nextBtn = document.getElementById("nextBtn");
 
-const bk = document.getElementById("bk");
-const wk = document.getElementById("wk");
-const wb = document.getElementById("wb");
-const wn = document.getElementById("wn");
+/* --- nội dung --- */
+const FULL_TEXT =
+"Con ngựa ấy ở lại bãi cỏ vì ngũ cốc và mái chuồng quen thuộc. "+
+"Nó nhiều lần tự nhủ rằng rồi sẽ rời đi và chạy đến một dải thảo nguyên xanh ngắt. "+
+"Nhưng mỗi lần đến sát ranh giới của sự dứt bỏ, tim nó lại mềm ra trước những điều đã làm nó hạnh phúc. "+
+"Phía trước là tự do, còn phía sau là người đã buộc sợi dây bằng cả quan tâm lẫn sự tiện lợi. "+
+"Và thế là nó quay đầu. Nó đã lỡ yêu nơi ấy quá nhiều để rời đi.";
 
-const dust = document.getElementById("dust");
-const ctx = dust.getContext("2d");
+/* câu mốc để auto chuyển trang */
+const BREAK_PHRASE =
+"Nó nhiều lần tự nhủ rằng rồi sẽ rời đi và chạy đến một dải thảo nguyên xanh ngắt.";
 
-let progressed = false;
+const BREAK_INDEX = FULL_TEXT.indexOf(BREAK_PHRASE) + BREAK_PHRASE.length;
 
-/* ===== intro → show scene ===== */
-setTimeout(()=>{
-  intro.classList.add("hide");
-  setTimeout(()=>{
-    stage.style.display="block";
-    resizeDust();
-  },700);
-},900);
-
-window.addEventListener("resize", resizeDust);
-function resizeDust(){
-  dust.width = stage.clientWidth;
-  dust.height = stage.clientHeight;
-}
-
-/* ===== tween move ===== */
-function move(el,x,y,cb){
-  el.style.transition="0.6s";
-  el.style.left=x+"px";
-  el.style.top =y+"px";
-  setTimeout(()=>cb&&cb(),650);
-}
-
-/* ===== FAIL ===== */
-function fail(){
-  statusBox.textContent="mission failed";
-  statusBox.className="fail show";
-  setTimeout(()=>location.href="veil.html",1300);
-}
-
-/* ===== SUCCESS ===== */
-function succeed(){
-  statusBox.textContent="The king is captured";
-  statusBox.className="success show";
-  setTimeout(()=>dustToSand(),500);
-}
-
-/* ========= DRAG KNIGHT ========= */
-
-let dragging=false, offsetX=0, offsetY=0;
-
-wn.addEventListener("mousedown", e=>{
-  if(progressed) return;
-  dragging=true;
-  wn.style.cursor="grabbing";
-
-  const r = wn.getBoundingClientRect();
-  offsetX = e.clientX - r.left;
-  offsetY = e.clientY - r.top;
-
-  e.stopPropagation();
-});
-
-window.addEventListener("mousemove", e=>{
-  if(!dragging) return;
-
-  const s = stage.getBoundingClientRect();
-  wn.style.left = (e.clientX - s.left - offsetX)+"px";
-  wn.style.top  = (e.clientY - s.top  - offsetY)+"px";
-});
-
-window.addEventListener("mouseup", ()=>{
-  if(!dragging) return;
-  dragging=false;
-  wn.style.cursor="grab";
-
-  /* === kiểm tra: phải “đứng cạnh vua TRẮNG” === */
-
-  const k = wn.getBoundingClientRect();
-  const w = wk.getBoundingClientRect();
-
-  const kcX = k.left + k.width/2;
-  const kcY = k.top  + k.height/2;
-
-  const wcX = w.left + w.width/2;
-  const wcY = w.top  + w.height/2;
-
-  const dist = Math.hypot(kcX-wcX, kcY-wcY);
-
-  const NEAR = 95; // bán kính cho phép
-
-  if(dist > NEAR) return fail();
-
-  /* đúng vị trí → “khóa” knight cạnh vua cho đẹp */
-  move(wn, 40, 200, ()=>{
-
-    progressed = true;
-
-    setTimeout(()=>{          // ♚ b8 → a8
-      move(bk,40,40,()=>{
-
-        setTimeout(()=>{      // ♗ e6 → d5
-          move(wb,300,280,()=>{
-            succeed();
-          });
-        },450);
-
-      });
-    },450);
-
-  });
-});
-
-/* ========= sand dissolve ========= */
-function dustToSand(){
-
-  const pieces=[bk,wk,wb,wn];
-  const particles=[];
-  const s = stage.getBoundingClientRect();
-
-  pieces.forEach(el=>{
-    const r = el.getBoundingClientRect();
-
-    for(let i=0;i<42;i++){
-      particles.push({
-        x:r.left-s.left + Math.random()*r.width,
-        y:r.top -s.top  + Math.random()*r.height,
-        vx:(Math.random()-.5)*1.6,
-        vy:-Math.random()*1.8,
-        life:1
-      });
-    }
-    el.style.opacity=0;
-  });
-
-  let t=0;
-  (function anim(){
-    ctx.clearRect(0,0,dust.width,dust.height);
-
-    particles.forEach(p=>{
-      p.x+=p.vx;
-      p.y+=p.vy;
-      p.vy+=0.02;
-      p.life-=0.01;
-
-      ctx.fillStyle=`rgba(210,225,255,${p.life})`;
-      ctx.fillRect(p.x,p.y,2,2);
-    });
-
-    t++;
-    if(t<140) requestAnimationFrame(anim);
-    else location.href="memory.html";
+/* typewriter */
+function typewriter(el, str, speed=28, done){
+  el.innerHTML="";
+  let i=0;
+  (function step(){
+    if(i<str.length){
+      el.innerHTML+=str[i++];
+      setTimeout(step,speed);
+    } else if(done){ done(); }
   })();
 }
+
+/* --- trạng thái điều hướng ---
+   lần đầu đọc → dừng giữa chừng → sang call.html
+   quay lại bằng BACK → coi như "returned"
+*/
+const returned = sessionStorage.getItem("memory_returned");
+
+/* mở câu chuyện */
+openStory.onclick = ()=>{
+  storyBox.classList.add("show");
+  storyBox.scrollIntoView({behavior:"smooth"});
+
+  if(!returned){
+    /* lần đầu: chỉ chạy đến đoạn BREAK rồi chuyển */
+    const firstPart = FULL_TEXT.slice(0, BREAK_INDEX);
+
+    typewriter(storyBox, firstPart, 28, ()=>{
+      // đánh dấu đã rời đi giữa chừng
+      sessionStorage.setItem("memory_half","1");
+      // chuyển sang call.html
+      window.location.href = "call.html";
+    });
+
+  } else {
+    /* quay lại: chạy toàn bộ và hiển thị NEXT */
+    typewriter(storyBox, FULL_TEXT, 26, ()=>{
+      nextBtn.classList.add("show");
+    });
+  }
+};
+
+/* nếu user quay lại từ call.html bằng Back → đánh dấu returned */
+if(sessionStorage.getItem("memory_half")){
+  sessionStorage.removeItem("memory_half");
+  sessionStorage.setItem("memory_returned","1");
+  // tự mở và chạy text luôn
+  openStory.click();
+}
+
+/* NEXT → sang stay.html */
+nextBtn.onclick = ()=> window.location.href = "stay.html";
+</script>
+
+</body>
+</html>
+
 </script>
 
 </body>
