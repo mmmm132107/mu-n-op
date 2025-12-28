@@ -16,15 +16,12 @@ body{
   overflow-x:hidden;
   scroll-behavior:smooth;
 
-  /* 🌌 nền mới — deep cosmic dusk */
   background:
-    radial-gradient(1200px 600px at 20% -10%, rgba(150,180,255,.15), transparent),
-    radial-gradient(900px 700px at 90% 20%, rgba(255,160,200,.12), transparent),
-    radial-gradient(800px 900px at 40% 120%, rgba(180,220,255,.12), transparent),
-    linear-gradient(#06080c,#05060a,#090911);
+    radial-gradient(1100px 600px at 12% -6%, rgba(150,180,255,.18), transparent),
+    radial-gradient(900px 720px at 90% 12%, rgba(255,160,200,.14), transparent),
+    linear-gradient(#05070b,#06070b,#090911);
 }
 
-/* ✨ nebula layer (chuyển động cực chậm) */
 .nebula{
   position:fixed;
   inset:0;
@@ -42,22 +39,6 @@ body{
   100%{ transform:translate(-12px,-8px) scale(1); }
 }
 
-/* 🌟 floating dust lights */
-.star{
-  position:fixed;
-  width:3px;
-  height:3px;
-  border-radius:50%;
-  background:#ffffff;
-  opacity:.7;
-  animation:twinkle 6s ease-in-out infinite;
-}
-@keyframes twinkle{
-  0%,100%{ opacity:.4; transform:scale(.9); }
-  50%{ opacity:1; transform:scale(1.4); }
-}
-
-/* màn hình đầu */
 .center{
   height:100vh;
   display:flex;
@@ -71,45 +52,8 @@ body{
   transition:.35s;
   text-shadow:0 0 30px rgba(220,230,255,.25);
 }
-.title:hover{
-  transform:scale(1.06);
-  text-shadow:0 0 36px rgba(230,240,255,.6);
-}
+.title:hover{ transform:scale(1.06); }
 
-/* 🔲 frame */
-.square{
-  width:16px;
-  height:16px;
-  border:1px solid rgba(230,215,200,.55);
-  position:absolute;
-  transition:.25s;
-}
-.square:hover{
-  background:rgba(230,215,200,.35);
-}
-
-/* noise */
-.noise{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:url("https://grainy-gradients.vercel.app/noise.svg");
-  opacity:.15;
-  mix-blend-mode:screen;
-}
-
-/* fade */
-.fade{
-  position:fixed;
-  inset:0;
-  background:#000;
-  opacity:0;
-  pointer-events:none;
-  transition:1s ease;
-}
-.fade.show{opacity:1}
-
-/* 📖 đoạn văn */
 .story{
   max-width:880px;
   margin:120px auto 180px;
@@ -125,108 +69,114 @@ body{
   opacity:1;
   transform:translateY(0);
 }
+
+/* mũi tên NEXT */
+.next{
+  position:fixed;
+  right:26px;
+  bottom:26px;
+  font-size:22px;
+  padding:10px 14px;
+  border-radius:50%;
+  border:1px solid rgba(230,220,210,.7);
+  cursor:pointer;
+  opacity:0;
+  pointer-events:none;
+  transition:.35s;
+}
+.next.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.next:hover{
+  background:rgba(240,230,220,.2);
+}
 </style>
 </head>
 
 <body>
 
 <div class="nebula"></div>
-<div class="noise"></div>
-<div class="fade" id="fade"></div>
-
-<!-- ⭐ random floating lights -->
-<script>
-for(let i=0;i<22;i++){
-  const s=document.createElement("div");
-  s.className="star";
-  s.style.top=Math.random()*100+"vh";
-  s.style.left=Math.random()*100+"vw";
-  s.style.animationDelay=(Math.random()*4)+"s";
-  document.body.appendChild(s);
-}
-</script>
 
 <section class="center">
-  <div class="title" id="goCall">My love story</div>
+  <div class="title" id="openStory">My love story</div>
 </section>
 
 <section id="story" class="story"></section>
 
+<div id="nextBtn" class="next">➜</div>
+
 <script>
-const fade = document.getElementById("fade");
 const storyBox = document.getElementById("story");
-const goCall = document.getElementById("goCall");
+const openStory = document.getElementById("openStory");
+const nextBtn = document.getElementById("nextBtn");
 
-/* 👉 click → sang echoe.html */
-goCall.onclick = () => window.location.href = "echoe.html";
-
-/* nội dung */
-const text =
+/* --- nội dung --- */
+const FULL_TEXT =
 "Con ngựa ấy ở lại bãi cỏ vì ngũ cốc và mái chuồng quen thuộc. "+
 "Nó nhiều lần tự nhủ rằng rồi sẽ rời đi và chạy đến một dải thảo nguyên xanh ngắt. "+
 "Nhưng mỗi lần đến sát ranh giới của sự dứt bỏ, tim nó lại mềm ra trước những điều đã làm nó hạnh phúc. "+
 "Phía trước là tự do, còn phía sau là người đã buộc sợi dây bằng cả quan tâm lẫn sự tiện lợi. "+
 "Và thế là nó quay đầu. Nó đã lỡ yêu nơi ấy quá nhiều để rời đi.";
 
+/* câu mốc để auto chuyển trang */
+const BREAK_PHRASE =
+"Nó nhiều lần tự nhủ rằng rồi sẽ rời đi và chạy đến một dải thảo nguyên xanh ngắt.";
+
+const BREAK_INDEX = FULL_TEXT.indexOf(BREAK_PHRASE) + BREAK_PHRASE.length;
+
 /* typewriter */
-function typewriter(el, str, speed=30){
+function typewriter(el, str, speed=28, done){
   el.innerHTML="";
   let i=0;
   (function step(){
     if(i<str.length){
       el.innerHTML+=str[i++];
       setTimeout(step,speed);
-    }
+    } else if(done){ done(); }
   })();
 }
 
-/* tạo frame + ô bí mật */
-function createFrame(){
-  const gap = 32;
-  const rows = Math.floor(window.innerHeight/gap);
-  const cols = Math.floor(window.innerWidth/gap);
+/* --- trạng thái điều hướng ---
+   lần đầu đọc → dừng giữa chừng → sang call.html
+   quay lại bằng BACK → coi như "returned"
+*/
+const returned = sessionStorage.getItem("memory_returned");
 
-  const secretR = rows;
-  const secretC = 0;
+/* mở câu chuyện */
+openStory.onclick = ()=>{
+  storyBox.classList.add("show");
+  storyBox.scrollIntoView({behavior:"smooth"});
 
-  for(let r=0;r<=rows;r++){
-    for(let c=0;c<=cols;c++){
-      const edge = r===0||r===rows||c===0||c===cols;
-      if(!edge) continue;
+  if(!returned){
+    /* lần đầu: chỉ chạy đến đoạn BREAK rồi chuyển */
+    const firstPart = FULL_TEXT.slice(0, BREAK_INDEX);
 
-      const s = document.createElement("div");
-      s.className="square";
-      s.style.top = r*gap+"px";
-      s.style.left = c*gap+"px";
+    typewriter(storyBox, firstPart, 28, ()=>{
+      // đánh dấu đã rời đi giữa chừng
+      sessionStorage.setItem("memory_half","1");
+      // chuyển sang call.html
+      window.location.href = "call.html";
+    });
 
-      if(r===secretR && c===secretC)
-        s.addEventListener("click", triggerSecret);
-
-      document.body.appendChild(s);
-    }
+  } else {
+    /* quay lại: chạy toàn bộ và hiển thị NEXT */
+    typewriter(storyBox, FULL_TEXT, 26, ()=>{
+      nextBtn.classList.add("show");
+    });
   }
+};
+
+/* nếu user quay lại từ call.html bằng Back → đánh dấu returned */
+if(sessionStorage.getItem("memory_half")){
+  sessionStorage.removeItem("memory_half");
+  sessionStorage.setItem("memory_returned","1");
+  // tự mở và chạy text luôn
+  openStory.click();
 }
-createFrame();
 
-/* hiệu ứng bí mật */
-function triggerSecret(){
-  fade.classList.add("show");
-
-  setTimeout(()=>{
-    fade.classList.remove("show");
-    storyBox.scrollIntoView({behavior:"smooth"});
-
-    setTimeout(()=>{
-      storyBox.classList.add("show");
-      typewriter(storyBox,text,26);
-    },450);
-
-    setTimeout(()=>{
-      window.location.href="echoe.html";
-    },6000);
-
-  },900);
-}
+/* NEXT → sang stay.html */
+nextBtn.onclick = ()=> window.location.href = "stay.html";
 </script>
 
 </body>
