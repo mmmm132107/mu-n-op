@@ -3,159 +3,143 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>rendezvous</title>
+<title>Voice Debug — rendezvous</title>
 
 <style>
 body{
   margin:0;
-  background:#06070a;
-  color:#f2e6d8;
-  font-family: "Be Vietnam Pro", system-ui, sans-serif;
-  overflow-x:hidden;
+  background:#05070c;
+  color:#f3e8dc;
+  font-family:system-ui,-apple-system,Segoe UI;
 }
 
-/* slideshow container */
-.slider-wrap{
-  width:100vw;
-  height:70vh;
-  overflow:hidden;
-  position:relative;
-}
-
-.slider{
-  display:flex;
-  width:max-content;
-  animation:scrollX 14s linear forwards;
-}
-
-.slider img{
-  width:100vw;
-  height:70vh;
-  object-fit:cover;
-  filter:brightness(.92);
-}
-
-/* slide animation */
-@keyframes scrollX{
-  from{ transform:translateX(0); }
-  to{ transform:translateX(-200%); } /* số này = số ảnh */
-}
-
-/* voice section */
-.voice-box{
-  text-align:center;
-  padding:40px 20px 90px;
-  opacity:0;
-  transform:translateY(12px);
-  transition:.6s;
-}
-
-.voice-box.show{
-  opacity:1;
-  transform:translateY(0);
+.wrap{
+  max-width:900px;
+  margin:60px auto;
+  padding:0 18px;
 }
 
 button{
-  padding:14px 20px;
-  border-radius:14px;
+  padding:12px 18px;
+  border-radius:12px;
   border:1px solid #d8c8b8;
-  background:rgba(25,25,28,.5);
-  color:#f2e6d8;
+  background:#16161c;
+  color:#f3e8dc;
   cursor:pointer;
-  font-size:15px;
-  backdrop-filter:blur(6px);
 }
-
-button:hover{
-  transform:scale(1.03);
-}
+button:hover{transform:scale(1.02);}
 
 #status{
-  margin-top:16px;
-  opacity:.85;
+  margin-top:14px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:#111217;
+  min-height:44px;
+  font-size:14px;
+  line-height:1.6;
+  white-space:pre-line;
+}
+
+.log{
+  margin-top:18px;
+  padding:12px;
+  border-radius:10px;
+  background:#0c0d13;
+  font-family:monospace;
+  font-size:13px;
+  max-height:220px;
+  overflow-y:auto;
 }
 </style>
 </head>
 
 <body>
 
-<div class="slider-wrap">
-  <div class="slider">
+<div class="wrap">
 
-    <!-- 🔹 Thay ảnh của bạn vào đây -->
-    <img src="/assets/r1.jpg">
-    <img src="/assets/r2.jpg">
-    <img src="/assets/r3.jpg">
+<h2>Kiểm tra web có nhận giọng nói hay không</h2>
 
-  </div>
-</div>
+<button id="listenBtn">Bấm để nói</button>
 
-<div id="voice" class="voice-box">
-  <h3>Nói mật khẩu để đi tiếp</h3>
-  <div style="opacity:.7; font-size:13px;">
-    (wo ai ni qizi — 我爱你 妻子 — wǒ ài nǐ qīzi)
-  </div>
+<div id="status"></div>
 
-  <br>
+<div class="log" id="logBox"></div>
 
-  <button id="listenBtn">Bấm để nói</button>
-
-  <p id="status"></p>
 </div>
 
 <script>
-const target = "wo ai ni qizi";   // câu đúng
-const voiceBox = document.getElementById("voice");
-const listenBtn = document.getElementById("listenBtn");
 const statusBox = document.getElementById("status");
+const logBox = document.getElementById("logBox");
+const listenBtn = document.getElementById("listenBtn");
 
-/* ✨ chỉ hiển thị voice box sau khi slideshow chạy xong */
-setTimeout(()=>{
-  voiceBox.classList.add("show");
-}, 14500); // bằng thời gian animation
+function log(msg){
+  console.log(msg);
+  logBox.textContent += msg + "\n";
+  logBox.scrollTop = logBox.scrollHeight;
+}
 
-/* 🎤 Speech Recognition */
+/* ========== KHỞI TẠO SPEECH API ========== */
+
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
-const rec = new SpeechRecognition();
+if(!SpeechRecognition){
+  statusBox.textContent =
+    "⚠ Trình duyệt không hỗ trợ SpeechRecognition.\n" +
+    "Hãy thử bằng Chrome hoặc Edge.";
+  log("SpeechRecognition NOT supported");
+} else {
+  log("SpeechRecognition supported ✓");
+}
 
-/* Nhận tốt tiếng Trung + Romanized */
-rec.lang = "zh-CN";
+const rec = new SpeechRecognition();
+rec.lang = "vi-VN";
 rec.interimResults = false;
 
-listenBtn.onclick = () => {
-  statusBox.innerText = "Đang lắng nghe…";
-  rec.start();
+/* ========== EVENT DEBUG ========== */
+
+rec.onstart = () => {
+  statusBox.textContent = "🎤 Đã bắt đầu nghe… hãy nói vào mic";
+  log("onstart ✓ recognition started");
 };
+
+rec.onaudiostart = () => log("onaudiostart ✓ mic nhận âm thanh");
+rec.onspeechstart = () => log("onspeechstart ✓ phát hiện giọng nói");
+rec.onspeechend = () => log("onspeechend — ngừng nói");
+rec.onaudioend = () => log("onaudioend — kết thúc audio");
+rec.onend = () => log("onend — recognition session ended");
+
+rec.onnomatch = () => {
+  statusBox.textContent = "❓ Không nghe rõ hoặc không hiểu câu nói";
+  log("onnomatch — no speech recognized");
+};
+
+rec.onerror = (e) => {
+  statusBox.textContent = "⛔ Lỗi: " + e.error;
+  log("ERROR → " + e.error);
+};
+
+/* ========== KHI NHẬN ĐƯỢC KẾT QUẢ ========== */
 
 rec.onresult = (e) => {
 
-  const spoken = e.results[0][0].transcript
-    .toLowerCase()
-    .replaceAll(",", "")
-    .trim();
+  const spoken = e.results[0][0].transcript.trim();
+  const conf = e.results[0][0].confidence;
 
-  statusBox.innerText = `Bạn nói: "${spoken}"`;
+  statusBox.textContent =
+    "Web nghe được:\n" +
+    `"${spoken}"\n` +
+    `(độ tin cậy: ${(conf*100).toFixed(1)}%)`;
 
-  /* 🎯 kiểm tra đúng mật khẩu */
-  if(spoken.includes(target)){
-    statusBox.innerText = "Đúng rồi… rendezvous accepted.";
+  log(`RESULT = "${spoken}"`);
+};
 
-    setTimeout(()=>{
-      window.location.href = "Thecall.html";
-    }, 900);
+/* ========== NÚT BẮT ĐẦU NGHE ========== */
 
-    return;
-  }
-
-  /* 🔁 vọng lại câu nói */
-  const echo = new SpeechSynthesisUtterance(
-    `Bạn vừa nói: ${spoken}. Không đúng.`
-  );
-
-  echo.lang = "vi-VN";
-  speechSynthesis.speak(echo);
+listenBtn.onclick = () => {
+  log("\n\n=== CLICK: START LISTENING ===");
+  statusBox.textContent = "⏳ Đang khởi động microphone…";
+  rec.start();
 };
 </script>
 
