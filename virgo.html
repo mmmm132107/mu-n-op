@@ -1,1 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Harp — Find the Melody</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; }
 
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 60% 20%, #2a1a0e 0%, #0d0804 60%, #000 100%);
+      display: flex;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      overflow: hidden;
+      cursor: default;
+    }
+
+    #harpPanel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0 6px;
+      position: relative;
+    }
+
+    h1 {
+      color: #c8a96e;
+      font-size: 1.7rem;
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      margin-bottom: 0.1rem;
+      opacity: 0.9;
+    }
+    .subtitle {
+      color: #7a5c3a;
+      font-size: 0.75rem;
+      letter-spacing: 0.22em;
+      margin-bottom: 0.8rem;
+      font-style: italic;
+    }
+
+    #statusBar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+    }
+    .stat-item { display:flex; gap:5px; align-items:center; }
+    .stat-label { color: #5a3a18; letter-spacing:0.1em; }
+    .stat-val   { color: #c8a96e; font-weight:400; }
+    .stat-val.warn { color: #e05050; }
+
+    #attemptPips { display:flex; gap:4px; }
+    .pip {
+      width:9px; height:9px; border-radius:50%;
+      border:1px solid #3a2010; background:#1a0e04;
+      transition: all 0.2s;
+    }
+    .pip.used   { background:#c04040; border-color:#e06060; }
+    .pip.correct{ background:#40c060; border-color:#60e080; box-shadow:0 0 6px #40c060; }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .btn {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.14em;
+      padding: 6px 16px;
+      border: 1px solid #5a3a18;
+      background: transparent;
+      color: #c8a96e;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+    .btn:hover:not(:disabled) { background:#2a1a08; color:#e8c98e; border-color:#c8a96e; }
+    .btn:disabled { opacity:0.3; cursor:not-allowed; }
+    .btn.submit-btn { border-color: #4a8a4a; color: #6ac86a; }
+    .btn.submit-btn:hover:not(:disabled) { background:#0a200a; border-color:#6ac86a; color:#8ae88a; }
+    .btn.submit-btn:disabled { border-color:#2a3a2a; color:#3a5a3a; }
+
+    .tempo-wrap {
+      display:flex; align-items:center; gap:5px;
+      color:#5a3a18; font-size:0.7rem; letter-spacing:0.1em;
+    }
+    input[type=range] { width:60px; accent-color:#c8a96e; }
+
+    .step-dots {
+      display:flex; gap:5px; margin-bottom:0.4rem;
+      flex-wrap:wrap; justify-content:center; max-width:420px;
+    }
+    .dot {
+      width:7px; height:7px; border-radius:50%;
+      background:#1a0e04; border:1px solid #3a2010; transition:all 0.14s;
+    }
+    .dot.done    { background:#5a3a18; border-color:#8a6030; }
+    .dot.current { background:#c8a96e; border-color:#e8c98e; box-shadow:0 0 6px #c8a96e; }
+    .dot.correct { background:#40c060; border-color:#60e080; }
+    .dot.wrong   { background:#c04040; border-color:#e06060; }
+
+    .harp-scene {
+      position:relative; width:420px; height:460px; user-select:none;
+    }
+    .harp-frame { position:absolute; inset:0; pointer-events:none; }
+    .strings-layer { position:absolute; inset:0; }
+
+    .string-wrap {
+      position:absolute;
+      transform-origin:top center; cursor:pointer;
+    }
+    .string { border-radius:99px; position:relative; margin:0 auto; transition:filter 0.08s; }
+    .string-wrap:hover .string { filter:brightness(1.8); }
+    .string-wrap.pluck .string { animation:pluckAnim 0.45s ease-out forwards; }
+    .string-wrap.lit   .string { filter:brightness(2.6)!important; box-shadow:0 0 16px 5px #e8c96eaa!important; }
+
+    @keyframes pluckAnim {
+      0%   { transform:scaleX(1);   filter:brightness(2.2); }
+      15%  { transform:scaleX(2.5); }
+      35%  { transform:scaleX(0.85);}
+      55%  { transform:scaleX(1.5); }
+      75%  { transform:scaleX(0.95);}
+      100% { transform:scaleX(1);   filter:brightness(1); }
+    }
+
+    .note-label {
+      position:absolute; bottom:24px;
+      font-size:0.6rem; letter-spacing:0.05em; color:#6a4a28;
+      pointer-events:none; transform:translateX(-50%);
+      font-family:'Cormorant Garamond', serif;
+    }
+    .note-label.mel { color:#c8a96e; }
+
+    .glow-particle {
+      position:fixed; border-radius:50%; pointer-events:none;
+      animation:floatUp 1.2s ease-out forwards; z-index:100;
+    }
+    @keyframes floatUp {
+      0%   { transform:translateY(0) scale(1); opacity:0.9; }
+      100% { transform:translateY(-100px) scale(0); opacity:0; }
+    }
+
+    #resultOverlay {
+      display:none;
+      position:absolute; inset:0;
+      align-items:center; justify-content:center;
+      flex-direction:column; gap:10px;
+      background: rgba(0,0,0,0.82);
+      z-index:50; border-radius:4px;
+      text-align:center; padding:20px;
+    }
+    #resultOverlay.show { display:flex; }
+    #resultTitle {
+      font-size:2rem; font-weight:300; letter-spacing:0.3em;
+      text-transform:uppercase;
+    }
+    #resultTitle.win  { color:#60e080; text-shadow:0 0 30px #40c06088; }
+    #resultTitle.lose { color:#e05050; text-shadow:0 0 30px #c0404088; }
+    #resultDetail {
+      font-size:0.8rem; letter-spacing:0.15em; color:#8a7050;
+      font-style:italic; line-height:1.7;
+    }
+    #resultScore {
+      font-family:'JetBrains Mono',monospace;
+      font-size:0.9rem; color:#c8a96e; letter-spacing:0.1em;
+    }
+
+    #penaltyOverlay {
+      display:none;
+      position:absolute; inset:0;
+      align-items:center; justify-content:center;
+      flex-direction:column; gap:12px;
+      background: rgba(0,0,0,0.92);
+      z-index:60;
+    }
+    #penaltyOverlay.show { display:flex; }
+    #penaltyTitle {
+      font-size:1.4rem; font-weight:300; letter-spacing:0.3em;
+      text-transform:uppercase; color:#e05050;
+    }
+    #penaltyTimer {
+      font-family:'JetBrains Mono',monospace;
+      font-size:3rem; color:#c04040; letter-spacing:0.1em;
+    }
+    #penaltyMsg {
+      font-size:0.75rem; color:#5a3030; letter-spacing:0.15em; font-style:italic;
+    }
+
+    .instructions {
+      margin-top:0.4rem; color:#4a3a28; font-size:0.65rem;
+      letter-spacing:0.18em; font-style:italic;
+    }
+
+    #editorPanel {
+      width: 268px;
+      min-height: 100vh;
+      background: #080400;
+      border-left: 1px solid #1a0e04;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #editorPanel h2 {
+      font-size:0.65rem; font-weight:400; letter-spacing:0.3em;
+      text-transform:uppercase; color:#5a3a18;
+      padding:10px 14px 7px; border-bottom:1px solid #1a0e04;
+      font-family:'JetBrains Mono',monospace;
+    }
+    .editor-hint {
+      font-size:0.56rem; color:#2a1a08;
+      padding:4px 14px 5px; letter-spacing:0.05em;
+      font-style:italic; line-height:1.5;
+      border-bottom:1px solid #100800;
+    }
+    #noteList { flex:1; overflow-y:auto; padding:3px 0; }
+    #noteList::-webkit-scrollbar { width:3px; }
+    #noteList::-webkit-scrollbar-track { background:#040200; }
+    #noteList::-webkit-scrollbar-thumb { background:#2a1808; border-radius:2px; }
+
+    .note-row {
+      display:flex; align-items:center; gap:5px;
+      padding:3px 8px; border-bottom:1px solid #0e0804;
+      transition:background 0.1s;
+    }
+    .note-row:hover { background:#100a02; }
+    .note-row.playing-row { background:#1a1004; border-left:2px solid #c8a96e; }
+    .note-row.correct-row { background:#081408; border-left:2px solid #40c060; }
+    .note-row.wrong-row   { background:#140808; border-left:2px solid #c04040; }
+
+    .idx-tag {
+      font-size:0.48rem; color:#2a1808; width:15px;
+      flex-shrink:0; font-family:'JetBrains Mono',monospace;
+    }
+    .note-row select {
+      font-family:'JetBrains Mono',monospace; font-size:0.63rem;
+      background:#080400; border:1px solid #2a1808;
+      color:#c8a96e; padding:2px 3px; border-radius:1px;
+      width:64px; cursor:pointer; outline:none;
+    }
+    .note-row select:focus { border-color:#8a6030; }
+    .note-row input[type=range] { width:64px; accent-color:#8a6030; flex-shrink:0; }
+    .dur-val {
+      font-family:'JetBrains Mono',monospace;
+      font-size:0.58rem; color:#5a3a18; width:22px; text-align:right;
+    }
+    .del-btn {
+      font-size:0.58rem; color:#1a0e04; cursor:pointer;
+      padding:0 2px; border:none; background:none; line-height:1;
+      transition:color 0.12s;
+    }
+    .del-btn:hover { color:#c04040; }
+    .note-row .match-icon {
+      font-size:0.65rem; width:14px; text-align:center; flex-shrink:0;
+    }
+
+    .editor-footer {
+      padding:7px 10px; border-top:1px solid #1a0e04;
+      display:flex; gap:5px; flex-wrap:wrap;
+    }
+    .editor-footer .btn { font-size:0.6rem; padding:4px 10px; }
+
+    #hintBox {
+      padding:5px 14px; font-size:0.6rem; color:#6a4a20;
+      letter-spacing:0.08em; font-style:italic; line-height:1.6;
+      border-bottom:1px solid #100800; min-height:36px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="harpPanel">
+  <h1>Find the Melody</h1>
+  <p class="subtitle">reconstruct the hidden tune · A Town With An Ocean View</p>
+
+  <div id="statusBar">
+    <div class="stat-item">
+      <span class="stat-label">TRIES</span>
+      <div id="attemptPips"></div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">LEFT</span>
+      <span class="stat-val" id="triesLeft">10</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">SCORE</span>
+      <span class="stat-val" id="scoreDisplay">0 / 20</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">BEST</span>
+      <span class="stat-val" id="bestDisplay">—</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn submit-btn" id="submitBtn" onclick="submitAttempt()">▶ Submit</button>
+    <button class="btn" onclick="previewMelody()" id="previewBtn">♩ Preview</button>
+    <button class="btn" onclick="resetGame()" id="resetBtn">↺ New Game</button>
+    <div class="tempo-wrap">
+      <span>BPM</span>
+      <input type="range" id="tempoSlider" min="40" max="200" value="105" oninput="updateTempo(this.value)"/>
+      <span id="tempoVal">105</span>
+    </div>
+  </div>
+
+  <div class="step-dots" id="stepDots"></div>
+
+  <div class="harp-scene" id="harpScene">
+    <svg class="harp-frame" viewBox="0 0 420 460" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="woodGold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#b8862a"/>
+          <stop offset="50%"  stop-color="#e8c46a"/>
+          <stop offset="100%" stop-color="#8a5e1a"/>
+        </linearGradient>
+        <linearGradient id="woodDark" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#3a2008"/>
+          <stop offset="50%"  stop-color="#6a3a18"/>
+          <stop offset="100%" stop-color="#2a1408"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="M 80 55 Q 60 145 70 290 Q 75 385 110 435 L 160 435 Q 130 385 125 290 Q 118 145 130 55 Z"
+            fill="url(#woodDark)" stroke="#c8a96e" stroke-width="1.5" opacity="0.95"/>
+      <path d="M 130 55 Q 200 8 310 26 Q 360 34 370 55 Q 360 70 310 62 Q 210 46 148 74 Z"
+            fill="url(#woodGold)" stroke="#e8c46a" stroke-width="1"/>
+      <rect x="348" y="53" width="28" height="382" rx="8"
+            fill="url(#woodGold)" stroke="#c8a96e" stroke-width="1.2"/>
+      <path d="M 95 435 L 378 435 Q 385 445 380 455 L 90 455 Q 85 445 95 435 Z"
+            fill="url(#woodGold)" stroke="#c8a96e" stroke-width="1"/>
+      <ellipse cx="370" cy="47" rx="16" ry="12" fill="#e8c46a" stroke="#c8a96e" stroke-width="1"/>
+      <path d="M362 47 Q370 39 378 47 Q370 55 362 47" fill="#c8a96e" opacity="0.6"/>
+      <g fill="#c8a96e" opacity="0.7">
+        <circle cx="175" cy="57" r="3"/><circle cx="200" cy="49" r="3"/>
+        <circle cx="225" cy="43" r="3"/><circle cx="250" cy="39" r="3"/>
+        <circle cx="275" cy="37" r="3"/><circle cx="300" cy="37" r="3"/>
+        <circle cx="325" cy="39" r="3"/><circle cx="340" cy="42" r="3"/>
+        <circle cx="352" cy="47" r="3"/>
+      </g>
+      <path d="M 88 110 Q 82 220 88 330"
+            stroke="#c8a96e" stroke-width="1" fill="none" opacity="0.3" filter="url(#glow)"/>
+    </svg>
+    <div class="strings-layer" id="stringsLayer"></div>
+
+    <div id="resultOverlay">
+      <div id="resultTitle">—</div>
+      <div id="resultScore"></div>
+      <div id="resultDetail"></div>
+      <button class="btn" onclick="closeResult()" style="margin-top:8px;">Continue</button>
+    </div>
+
+    <div id="penaltyOverlay">
+      <div id="penaltyTitle">⏳ Penalty</div>
+      <div id="penaltyTimer">5:00</div>
+      <div id="penaltyMsg">Too many wrong attempts. Wait it out...</div>
+    </div>
+  </div>
+
+  <p class="instructions">♩ build your melody · press Submit to check · 10 attempts max ♩</p>
+</div>
+
+<div id="editorPanel">
+  <h2>note editor</h2>
+  <div id="hintBox">Arrange 20 notes to match the hidden melody.</div>
+  <div id="noteList"></div>
+  <div class="editor-footer">
+    <button class="btn" onclick="addNote()">+ Add</button>
+    <button class="btn" onclick="clearAll()">✕ Clear</button>
+    <button class="btn" onclick="resetToBlank()">↺ Reset</button>
+  </div>
+</div>
+
+<script>
+const ANSWER = [
+  'E4','B4','A4','G4','G4','F#4','E4','F#4',
+  'A4','G4','F#4','G4','D5','C5','B4','A4',
+  'A4','G4','A4','B4'
+];
+
+const HARP_NOTES   = ['D4','E4','F#4','G4','A4','B4','C5','D5','E5'];
+const NOTE_OPTIONS = ['rest', ...HARP_NOTES];
+const MAX_ATTEMPTS = 10;
+const PENALTY_SECS = 300;
+
+let attempts=0, bestScore=0, gameWon=false, penaltyActive=false;
+let penaltyTO=null, previewPlaying=false, previewTO=null;
+
+function blankMelody(){
+  return Array.from({length:20},()=>({note:'rest',dur:0.5}));
+}
+let melody=blankMelody();
+
+const N=HARP_NOTES.length;
+const PEGS=[
+  {x:175,y:57},{x:200,y:49},{x:225,y:43},{x:250,y:39},
+  {x:275,y:37},{x:300,y:37},{x:325,y:39},{x:340,y:42},{x:352,y:47}
+];
+const BOT_Y=435;
+
+function noteToMidi(n){
+  const map={'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11};
+  const m=n.match(/^([A-G]#?)(\d)$/);
+  return map[m[1]]+(parseInt(m[2])+1)*12;
+}
+function midiToFreq(m){ return 440*Math.pow(2,(m-69)/12); }
+function noteFreq(n){ return midiToFreq(noteToMidi(n)); }
+function stringColor(){ return '#e83030'; }
+
+const ACtx=window.AudioContext||window.webkitAudioContext;
+let actx=null;
+function getCtx(){ if(!actx) actx=new ACtx(); return actx; }
+
+function playNote(freq,durSec){
+  const ac=getCtx(), d=Math.max(durSec*1.8,0.28);
+  [[freq,'triangle',0.45,d],[freq*2,'sine',0.1,d*0.65],[freq*0.5,'sine',0.06,d*0.5]].forEach(([f,t,v,dd])=>{
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type=t; o.frequency.value=f;
+    g.gain.setValueAtTime(v,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+dd);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime+dd);
+  });
+}
+
+function spawnParticles(x,y,color){
+  for(let i=0;i<5;i++){
+    const p=document.createElement('div'); p.className='glow-particle';
+    const s=4+Math.random()*7;
+    p.style.cssText=`left:${x+(Math.random()-.5)*26}px;top:${y+(Math.random()-.5)*16}px;
+      width:${s}px;height:${s}px;background:${color};box-shadow:0 0 ${s*2}px ${color};
+      animation-delay:${Math.random()*.15}s;animation-duration:${.7+Math.random()*.5}s;`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),1200);
+  }
+}
+
+const layer=document.getElementById('stringsLayer');
+const scene=document.getElementById('harpScene');
+const sceneRect=()=>scene.getBoundingClientRect();
+const stringWraps=[], noteToWrap={};
+
+function buildStrings(){
+  layer.innerHTML='';
+  stringWraps.length=0;
+  Object.keys(noteToWrap).forEach(k=>delete noteToWrap[k]);
+  HARP_NOTES.forEach((note,i)=>{
+    const peg=PEGS[i];
+    const topX=peg.x, topY=peg.y, botX=peg.x, botY=BOT_Y;
+    const dx=botX-topX, dy=botY-topY;
+    const len=Math.sqrt(dx*dx+dy*dy);
+    const angle=Math.atan2(dx,dy)*180/Math.PI;
+    const sw=Math.max(1,2.8-(i/(N-1))*1.6);
+    const color=stringColor();
+    const midX=(topX+botX)/2, midY=(topY+botY)/2;
+
+    const wrap=document.createElement('div');
+    wrap.className='string-wrap';
+    wrap.style.cssText=`position:absolute;left:${topX-sw/2-7}px;top:${topY}px;bottom:unset;
+      width:${sw+14}px;height:${len}px;transform-origin:top center;transform:rotate(${angle}deg);`;
+
+    const str=document.createElement('div');
+    str.className='string';
+    str.style.cssText=`width:${sw}px;height:100%;
+      background:linear-gradient(to bottom,${color}cc,${color},${color}55);
+      box-shadow:0 0 5px ${color}88,0 0 1px ${color};`;
+    wrap.appendChild(str);
+    layer.appendChild(wrap);
+    wrap._d={note,freq:noteFreq(note),midX,midY,color};
+    stringWraps.push(wrap);
+    noteToWrap[note]=wrap;
+
+    const lbl=document.createElement('div');
+    lbl.className='note-label mel';
+    lbl.textContent=note;
+    lbl.style.cssText=`left:${botX}px;top:${botY+22}px;bottom:unset;transform:translateX(-50%);`;
+    layer.appendChild(lbl);
+  });
+}
+
+function pluckWrap(wrap,durBeats){
+  const s=wrap._d;
+  playNote(s.freq,(durBeats||0.5)*(60/bpm));
+  wrap.classList.remove('pluck'); void wrap.offsetWidth; wrap.classList.add('pluck');
+  setTimeout(()=>wrap.classList.remove('pluck'),460);
+  const r=sceneRect();
+  spawnParticles(r.left+s.midX,r.top+s.midY,s.color);
+}
+function litWrap(wrap,durMs){
+  wrap.classList.add('lit');
+  setTimeout(()=>wrap.classList.remove('lit'),durMs*0.9);
+}
+
+function buildDots(){
+  const el=document.getElementById('stepDots'); el.innerHTML='';
+  melody.forEach((_,i)=>{ const d=document.createElement('div'); d.className='dot'; d.id='dot'+i; el.appendChild(d); });
+}
+function updateDots(step,results){
+  melody.forEach((_,i)=>{
+    const d=document.getElementById('dot'+i); if(!d) return;
+    if(results) d.className='dot'+(results[i]==='correct'?' correct':' wrong');
+    else d.className='dot'+(i<step?' done':i===step?' current':'');
+  });
+}
+
+function buildPips(){
+  const el=document.getElementById('attemptPips'); el.innerHTML='';
+  for(let i=0;i<MAX_ATTEMPTS;i++){ const p=document.createElement('div'); p.className='pip'; p.id='pip'+i; el.appendChild(p); }
+}
+function updatePips(lastResult){
+  for(let i=0;i<attempts;i++){
+    const p=document.getElementById('pip'+i); if(!p) continue;
+    p.className='pip'+(i===attempts-1&&lastResult==='correct'?' correct':' used');
+  }
+}
+
+let isDown=false; const dragged=new Set();
+function getWrapAtX(cx){
+  const r=sceneRect(), lx=cx-r.left;
+  let best=null,bd=22;
+  for(const w of stringWraps){ const d=Math.abs(lx-w._d.midX); if(d<bd){bd=d;best=w;} }
+  return best;
+}
+scene.addEventListener('mousedown',(e)=>{ if(penaltyActive||gameWon) return; isDown=true; dragged.clear(); const w=getWrapAtX(e.clientX); if(w){dragged.add(w);pluckWrap(w,0.5);} e.preventDefault(); });
+window.addEventListener('mousemove',(e)=>{ if(!isDown) return; const w=getWrapAtX(e.clientX); if(w&&!dragged.has(w)){dragged.add(w);pluckWrap(w,0.5);} });
+window.addEventListener('mouseup',()=>{isDown=false;dragged.clear();});
+scene.addEventListener('touchstart',(e)=>{ if(penaltyActive||gameWon) return; isDown=true; dragged.clear(); const w=getWrapAtX(e.touches[0].clientX); if(w){dragged.add(w);pluckWrap(w,0.5);} e.preventDefault(); },{passive:false});
+window.addEventListener('touchmove',(e)=>{ if(!isDown) return; const w=getWrapAtX(e.touches[0].clientX); if(w&&!dragged.has(w)){dragged.add(w);pluckWrap(w,0.5);} },{passive:false});
+window.addEventListener('touchend',()=>{isDown=false;dragged.clear();});
+
+let bpm=105, previewStep=0;
+
+function previewMelody(){
+  if(penaltyActive) return;
+  if(previewPlaying){ stopPreview(); return; }
+  getCtx(); previewPlaying=true; previewStep=0;
+  document.getElementById('previewBtn').textContent='■ Stop';
+  runPreviewStep();
+}
+function runPreviewStep(){
+  if(!previewPlaying||previewStep>=melody.length){ stopPreview(); return; }
+  const {note,dur}=melody[previewStep];
+  const durMs=dur*(60000/bpm);
+  updateDots(previewStep,null);
+  if(note&&note!=='rest'){ const w=noteToWrap[note]; if(w){pluckWrap(w,dur);litWrap(w,durMs);} }
+  document.querySelectorAll('.note-row').forEach(r=>r.classList.remove('playing-row'));
+  const pr=document.getElementById('nrow'+previewStep);
+  if(pr){ pr.classList.add('playing-row'); pr.scrollIntoView({block:'nearest'}); }
+  previewStep++;
+  previewTO=setTimeout(runPreviewStep,durMs);
+}
+function stopPreview(){
+  previewPlaying=false; clearTimeout(previewTO);
+  document.getElementById('previewBtn').textContent='♩ Preview';
+  document.querySelectorAll('.note-row').forEach(r=>r.classList.remove('playing-row'));
+  updateDots(-1,null); stringWraps.forEach(w=>w.classList.remove('lit'));
+}
+
+function grade(playerMelody){
+  const playerNotes=playerMelody.map(m=>m.note);
+  let score=0; const results=[];
+  for(let i=0;i<ANSWER.length;i++){
+    const correct=playerNotes[i]===ANSWER[i];
+    results.push(correct?'correct':'wrong');
+    if(correct) score++;
+  }
+  return {score,results};
+}
+
+function submitAttempt(){
+  if(penaltyActive||gameWon) return;
+  if(melody.length!==20){ setHint(`⚠ Your melody must have exactly 20 notes. You have ${melody.length}.`); return; }
+  stopPreview(); getCtx();
+  attempts++; updatePips('');
+  const {score,results}=grade(melody);
+  if(score>bestScore){ bestScore=score; document.getElementById('bestDisplay').textContent=bestScore+' / 20'; }
+  document.getElementById('scoreDisplay').textContent=score+' / 20';
+  document.getElementById('triesLeft').textContent=Math.max(0,MAX_ATTEMPTS-attempts);
+  if(MAX_ATTEMPTS-attempts<=3) document.getElementById('triesLeft').classList.add('warn');
+  updateDots(-1,results);
+  document.querySelectorAll('.note-row').forEach((row,i)=>{
+    row.classList.remove('correct-row','wrong-row');
+    if(i<results.length) row.classList.add(results[i]==='correct'?'correct-row':'wrong-row');
+    const icon=row.querySelector('.match-icon');
+    if(icon){ icon.textContent=results[i]==='correct'?'✓':'✗'; icon.style.color=results[i]==='correct'?'#40c060':'#c04040'; }
+  });
+  playMelodyThenResult(score,results);
+}
+
+function playMelodyThenResult(score,results){
+  let step=0;
+  function next(){
+    if(step>=melody.length){ showResult(score,results); return; }
+    const {note,dur}=melody[step];
+    const durMs=dur*(60000/bpm);
+    if(note&&note!=='rest'){ const w=noteToWrap[note]; if(w){pluckWrap(w,dur);litWrap(w,durMs);} }
+    step++; setTimeout(next,durMs);
+  }
+  next();
+}
+
+function showResult(score,results){
+  const won=score===20;
+  const ro=document.getElementById('resultOverlay');
+  const rt=document.getElementById('resultTitle');
+  const rs=document.getElementById('resultScore');
+  const rd=document.getElementById('resultDetail');
+  if(won){
+    gameWon=true; updatePips('correct');
+    rt.textContent='✓ Perfect!'; rt.className='win';
+    rs.textContent=`${score} / 20 notes correct`;
+    rd.textContent=`You found the melody in ${attempts} attempt${attempts>1?'s':''}.\nA Town With An Ocean View — Joe Hisaishi`;
+    document.getElementById('submitBtn').disabled=true;
+  } else {
+    rt.textContent=score>=15?'So Close…':score>=10?'Getting Warm':'Keep Trying';
+    rt.className='lose';
+    rs.textContent=`${score} / 20 notes correct`;
+    const wrongIdxs=results.map((r,i)=>r==='wrong'?i+1:null).filter(Boolean);
+    rd.textContent=`Notes ${wrongIdxs.slice(0,6).join(', ')}${wrongIdxs.length>6?'…':''} are off.\n${MAX_ATTEMPTS-attempts} attempt${MAX_ATTEMPTS-attempts!==1?'s':''} remaining.`;
+    if(attempts>=MAX_ATTEMPTS&&!won){ ro.style.display='none'; startPenalty(); return; }
+  }
+  ro.classList.add('show');
+  setHint(won?'🎉 Melody found!':`${score}/20 correct — check the green/red markers.`);
+}
+
+function closeResult(){
+  document.getElementById('resultOverlay').classList.remove('show');
+  updateDots(-1,null);
+}
+
+let penaltyInterval=null;
+function startPenalty(){
+  penaltyActive=true;
+  document.getElementById('submitBtn').disabled=true;
+  document.getElementById('penaltyOverlay').classList.add('show');
+  let remaining=PENALTY_SECS;
+  updatePenaltyDisplay(remaining);
+  penaltyInterval=setInterval(()=>{ remaining--; updatePenaltyDisplay(remaining); if(remaining<=0){clearInterval(penaltyInterval);endPenalty();} },1000);
+}
+function updatePenaltyDisplay(secs){
+  const m=Math.floor(secs/60),s=secs%60;
+  document.getElementById('penaltyTimer').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+}
+function endPenalty(){
+  penaltyActive=false;
+  document.getElementById('penaltyOverlay').classList.remove('show');
+  attempts=0; buildPips();
+  document.getElementById('triesLeft').textContent=MAX_ATTEMPTS;
+  document.getElementById('triesLeft').classList.remove('warn');
+  document.getElementById('submitBtn').disabled=false;
+  setHint('Penalty over. 10 fresh attempts restored.');
+  updateDots(-1,null);
+  document.querySelectorAll('.note-row').forEach(r=>{ r.classList.remove('correct-row','wrong-row'); const icon=r.querySelector('.match-icon'); if(icon) icon.textContent=''; });
+}
+
+function setHint(msg){ document.getElementById('hintBox').textContent=msg; }
+
+function buildEditor(){
+  const list=document.getElementById('noteList'); list.innerHTML='';
+  melody.forEach((item,idx)=>{
+    const row=document.createElement('div'); row.className='note-row'; row.id='nrow'+idx;
+    const itag=document.createElement('span'); itag.className='idx-tag'; itag.textContent=(idx+1); row.appendChild(itag);
+    const icon=document.createElement('span'); icon.className='match-icon'; icon.textContent=''; row.appendChild(icon);
+    const sel=document.createElement('select');
+    NOTE_OPTIONS.forEach(opt=>{ const o=document.createElement('option'); o.value=opt; o.textContent=opt; if(opt===item.note) o.selected=true; sel.appendChild(o); });
+    sel.onchange=()=>{ melody[idx].note=sel.value; };
+    row.appendChild(sel);
+    const slider=document.createElement('input'); slider.type='range'; slider.min=0.25; slider.max=4; slider.step=0.25; slider.value=item.dur;
+    const valSpan=document.createElement('span'); valSpan.className='dur-val'; valSpan.textContent=item.dur;
+    slider.oninput=()=>{ melody[idx].dur=parseFloat(slider.value); valSpan.textContent=melody[idx].dur; };
+    row.appendChild(slider); row.appendChild(valSpan);
+    const del=document.createElement('button'); del.className='del-btn'; del.textContent='✕';
+    del.onclick=()=>{ melody.splice(idx,1); buildEditor(); buildDots(); };
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function addNote(){ if(melody.length>=20){setHint('⚠ Max 20 notes.');return;} melody.push({note:'G4',dur:0.5}); buildEditor(); buildDots(); document.getElementById('noteList').scrollTop=9999; }
+function clearAll(){ melody=[]; buildEditor(); buildDots(); }
+function resetToBlank(){
+  melody=blankMelody(); buildEditor(); buildDots(); updateDots(-1,null);
+  document.querySelectorAll('.note-row').forEach(r=>r.classList.remove('correct-row','wrong-row'));
+  setHint('Arrange 20 notes to match the hidden melody.');
+}
+function resetGame(){
+  stopPreview(); if(penaltyInterval) clearInterval(penaltyInterval);
+  penaltyActive=false; gameWon=false; attempts=0; bestScore=0;
+  document.getElementById('penaltyOverlay').classList.remove('show');
+  document.getElementById('resultOverlay').classList.remove('show');
+  document.getElementById('submitBtn').disabled=false;
+  document.getElementById('bestDisplay').textContent='—';
+  document.getElementById('scoreDisplay').textContent='0 / 20';
+  document.getElementById('triesLeft').textContent=MAX_ATTEMPTS;
+  document.getElementById('triesLeft').classList.remove('warn');
+  buildPips(); resetToBlank();
+}
+function updateTempo(v){ bpm=parseInt(v); document.getElementById('tempoVal').textContent=v; }
+
+buildStrings(); buildDots(); buildPips(); buildEditor();
+setHint('Arrange 20 notes to match the hidden melody. Press Submit when ready.');
+</script>
+</body>
+</html>
